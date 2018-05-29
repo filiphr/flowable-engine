@@ -26,6 +26,7 @@
 		<cxf.version>3.2.3</cxf.version>
 		<slf4j.version>1.7.25</slf4j.version>
 		<spring.boot.version>1.5.10.RELEASE</spring.boot.version>
+		<jacoco.version>0.8.1</jacoco.version>
 
         <checkstyle.config.location>checkstyle/flowable-checkstyle.xml</checkstyle.config.location>
         <checkstyle.suppressions.location>/checkstyle/flowable-suppressions.xml</checkstyle.suppressions.location>
@@ -983,7 +984,8 @@
 		<module>modules/flowable-engine</module>
 		<module>modules/flowable-app-engine-api</module>
 		<module>modules/flowable-app-engine</module>
-	</modules>
+        <module>docs/coverage</module>
+    </modules>
 
 	<build>
 		<plugins>
@@ -1042,6 +1044,21 @@
 						<flowable.osgi.version.clean>${project.version}</flowable.osgi.version.clean>
 					</versions>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<configuration>
+					<sessionId>${project.artifactId}</sessionId>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 		<pluginManagement>
@@ -1317,6 +1334,7 @@
                 <module>modules/flowable-spring-boot</module>
 				<module>modules/flowable-jms-spring-executor</module>
 				<module>modules/flowable-ui-common</module>
+                <module>docs/coverage</module>
 			</modules>
 		</profile>
 		<profile>
