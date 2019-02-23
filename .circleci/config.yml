@@ -6,10 +6,10 @@ version: 2.1
 executors:
   jdk-8:
     docker:
-      - image: circleci/openjdk:8-jdk
+      - image: jdk8u202-b08-alpine
   jdk-11:
     docker:
-      - image: circleci/openjdk:11.0.2-jdk
+      - image: jdk-11.0.2.9-alpine
 
 commands:
   run-build:
