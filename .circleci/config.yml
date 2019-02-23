@@ -1,0 +1,74 @@
+# Java Maven CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-java/ for more details
+#
+version: 2.1
+executors:
+  jdk-8:
+    docker:
+      - image: circleci/openjdk:8-jdk
+  jdk-11:
+    docker:
+      - image: circleci/openjdk:11-jdk
+
+commands:
+  run-build:
+    parameters:
+      jdk:
+        type: string
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            # when lock file changes, use increasingly general patterns to restore cache
+            - maven-repo-v1-jdk-<< parameters.jdk >>-{{ .Branch }}-{{ checksum "pom.xml" }}
+            - maven-repo-v1-jdk-<< parameters.jdk >>-{{ .Branch }}-
+            - maven-repo-v1-jdk-<< parameters.jdk >>-
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: maven-repo-v1-jdk-<< parameters.jdk >>-{{ .Branch }}-{{ checksum "pom.xml" }}
+
+      - run:
+          name: Run test
+          command: mvn test -Pdistro,errorLogging -DskipTests=false -B -V
+
+      - run:
+          name: Save test results
+            command: |
+              mkdir -p ~/junit/
+              find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/junit/ \;
+            when: always
+
+      - store_test_results:
+          path: target/surefire-reports
+
+
+jobs:
+  build-jdk8:
+    executor: jdk-8
+
+    working_directory: ~/flowable-engine
+
+    environment:
+      # Customize the JVM maximum heap limit
+      MAVEN_OPTS: -Xmx3200m
+
+    steps:
+      - run-build:
+          - jdk: "8"
+
+  build-jdk11:
+    executor: jdk-11
+
+    working_directory: ~/flowable-engine
+
+    environment:
+      # Customize the JVM maximum heap limit
+      MAVEN_OPTS: -Xmx3200m
+
+    steps:
+      - run-build:
+          - jdk: "11"
