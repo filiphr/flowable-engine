@@ -6,10 +6,10 @@ version: 2.1
 executors:
   jdk-8:
     docker:
-      - image: adoptopenjdk/jdk8u202-b08-alpine
+      - image: adoptopenjdk/openjdk8:jdk8u202-b08-alpine
   jdk-11:
     docker:
-      - image: adoptopenjdk/jdk-11.0.2.9-alpine
+      - image: adoptopenjdk/openjdk11:jdk-11.0.2.9-alpine
 
 commands:
   run-build:
