@@ -45,7 +45,7 @@ commands:
 
       - run:
           name: Run test
-          command: mvn test -Pdistro,errorLogging -DskipTests=false -B -V
+          command: ./mvnw test -Pdistro,errorLogging -DskipTests=false -B -V
 
       - run:
           name: Save test results
