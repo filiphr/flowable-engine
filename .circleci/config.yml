@@ -27,9 +27,9 @@ commands:
             - maven-repo-v1-jdk-<< parameters.jdk >>-{{ .Branch }}-
             - maven-repo-v1-jdk-<< parameters.jdk >>-
 
-        - restore_cache:
-            name: Restore maven wrapper cache
-            key: maven-wrapper-v1-jdk-<< parameters.jdk >>-{{ checksum ".mvn/wrapper/maven-wrapper.properties" }}
+      - restore_cache:
+          name: Restore maven wrapper cache
+          key: maven-wrapper-v1-jdk-<< parameters.jdk >>-{{ checksum ".mvn/wrapper/maven-wrapper.properties" }}
 
       - save_cache:
           name: Save Maven repository cache
