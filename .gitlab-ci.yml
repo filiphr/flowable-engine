@@ -10,7 +10,8 @@ variables:
 
 java-8:
   stage: build
-  image: adoptopenjdk/openjdk11:jdk-11.0.2.9
+#  image: adoptopenjdk/openjdk11:jdk-11.0.2.9
+  image: adoptopenjdk/openjdk8:jdk8u202-b08
   script: ./mvnw test -Pdistro,errorLogging -DskipTests=false -B -V
   artifacts:
     reports:
