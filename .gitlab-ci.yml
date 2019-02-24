@@ -15,7 +15,6 @@ java-8:
   before_script:
     - apt-get update
     - apt-get install -y fontconfig
-#  script: ./mvnw test -Pdistro,errorLogging -DskipTests=false -B -V
   script: ./mvnw test -Pdistro,errorLogging -DskipTests -B -V
   script: ./mvnw test -Pdistro,errorLogging -DskipTests=false -B -V
   artifacts:
