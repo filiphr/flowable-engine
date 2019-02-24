@@ -22,7 +22,7 @@ java-8:
     - echo $MAVEN_OPTS
     - apt-get update
     - apt-get install -y fontconfig
-  script: ./mvnw test -Pdistro,errorLogging -DskipTests $MAVEN_CLI_OPTS
+  script: ./mvnw test -Pdistro,errorLogging -DskipTests=false $MAVEN_CLI_OPTS
   artifacts:
     reports:
       junit:
