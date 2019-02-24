@@ -11,7 +11,7 @@ variables:
 java-8:
   stage: build
   image: maven:3.6.0-jdk-11
-  script: mvn test -Pdistro,errorLogging -DskipTests=false -B -V
+  script: ./mvnw test -Pdistro,errorLogging -DskipTests=false -B -V
   artifacts:
     reports:
       junit:
