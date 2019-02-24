@@ -16,6 +16,7 @@ java-8:
     - touch $JAVA_HOME/lib/fontconfig.properties
     - echo "version=1" > $JAVA_HOME/lib/fontconfig.properties
     - echo "sequence.allfonts=default" >> $JAVA_HOME/lib/fontconfig.properties
+    - echo $JAVA_HOME/lib/fontconfig.properties
   script: ./mvnw test -Pdistro,errorLogging -DskipTests=false -B -V
   artifacts:
     reports:
