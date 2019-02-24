@@ -23,29 +23,29 @@ commands:
           name: Restore Maven repository cache
           keys:
             # when lock file changes, use increasingly general patterns to restore cache
-            - maven-repo-v3-jdk-<< parameters.jdk >>-{{ .Branch }}-{{ checksum "pom.xml" }}
-            - maven-repo-v3-jdk-<< parameters.jdk >>-{{ .Branch }}-
-            - maven-repo-v3-jdk-<< parameters.jdk >>-
+            - maven-repo-v4-jdk-<< parameters.jdk >>-{{ .Branch }}-{{ checksum "pom.xml" }}
+            - maven-repo-v4-jdk-<< parameters.jdk >>-{{ .Branch }}-
+            - maven-repo-v4-jdk-<< parameters.jdk >>-
 
       - restore_cache:
           name: Restore maven wrapper cache
-          key: maven-wrapper-v3-jdk-<< parameters.jdk >>-{{ checksum ".mvn/wrapper/maven-wrapper.properties" }}
+          key: maven-wrapper-v4-jdk-<< parameters.jdk >>-{{ checksum ".mvn/wrapper/maven-wrapper.properties" }}
 
       - run:
           name: Download dependencies
-          command: ./mvnw dependency:go-offline
+          command: ./mvnw clean install -Pdistro,errorLogging -DskipTests dependency:resolve-plugins dependency:go-offline
 
       - save_cache:
           name: Save Maven repository cache
           paths:
             - ~/.m2
-          key: maven-repo-v3-jdk-<< parameters.jdk >>-{{ .Branch }}-{{ checksum "pom.xml" }}
+          key: maven-repo-v4-jdk-<< parameters.jdk >>-{{ .Branch }}-{{ checksum "pom.xml" }}
 
       - save_cache:
           name: Save maven wrapper cache
           paths:
             - .mvn/wrapper/maven-wrapper.jar
-          key: maven-wrapper-v3-jdk-<< parameters.jdk >>-{{ checksum ".mvn/wrapper/maven-wrapper.properties" }}
+          key: maven-wrapper-v4-jdk-<< parameters.jdk >>-{{ checksum ".mvn/wrapper/maven-wrapper.properties" }}
 
       - run:
           name: Run test
