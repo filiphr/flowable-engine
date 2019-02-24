@@ -13,12 +13,8 @@ java-8:
 #  image: adoptopenjdk/openjdk11:jdk-11.0.2.9
   image: adoptopenjdk/openjdk8:jdk8u202-b08
   before_script:
-    - ls -al $JAVA_HOME/lib
-    - touch $JAVA_HOME/lib/fontconfig.properties
-    - echo "version=1" > $JAVA_HOME/lib/fontconfig.properties
-    - echo "sequence.allfonts=default" >> $JAVA_HOME/lib/fontconfig.properties
-    - cat $JAVA_HOME/lib/fontconfig.properties
-    - ls -al $JAVA_HOME/lib
+    - apt-get update
+    - apt-get install -y fontconfig
   script: ./mvnw test -Pdistro,errorLogging -DskipTests=false -B -V
   artifacts:
     reports:
