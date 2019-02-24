@@ -1041,6 +1041,7 @@
 					<failIfNoTests>false</failIfNoTests>
 					<trimStackTrace>false</trimStackTrace>
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
+					<useSystemClassLoader>false</useSystemClassLoader>
 					<excludes>
 						<exclude>**/*TestCase.java</exclude>
 					</excludes>
