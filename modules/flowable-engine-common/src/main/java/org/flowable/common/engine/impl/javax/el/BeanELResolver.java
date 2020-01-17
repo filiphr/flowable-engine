@@ -508,6 +508,11 @@ public class BeanELResolver extends ELResolver {
 				params = new Object[0];
 			}
 			String name = method.toString();
+
+			if (paramTypes == null) {
+				paramTypes = getTypesFromValues(params);
+			}
+
 			Method target = findMethod(base, name, paramTypes, params.length);
 			if (target == null) {
 				throw new MethodNotFoundException("Cannot find method " + name + " with " + params.length + " parameters in " + base.getClass());
@@ -544,6 +549,23 @@ public class BeanELResolver extends ELResolver {
 			}
 		}
 		return varArgsMethod == null ? null : findAccessibleMethod(varArgsMethod);
+	}
+
+	private static Class<?>[] getTypesFromValues(Object[] values) {
+		if (values == null) {
+			return null;
+		}
+
+		Class<?>[] result = new Class<?>[values.length];
+		for (int i = 0; i < values.length; i++) {
+			if (values[i] == null) {
+				result[i] = null;
+			} else {
+				result[i] = values[i].getClass();
+			}
+		}
+
+		return result;
 	}
 
 	/**

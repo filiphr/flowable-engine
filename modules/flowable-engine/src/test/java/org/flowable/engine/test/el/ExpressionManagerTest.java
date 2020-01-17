@@ -18,7 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.assertj.core.api.Assertions;
 import org.flowable.common.engine.api.delegate.Expression;
+import org.flowable.common.engine.impl.el.VariableContainerWrapper;
 import org.flowable.common.engine.impl.identity.Authentication;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntity;
 import org.flowable.engine.impl.test.PluggableFlowableTestCase;
@@ -26,6 +28,8 @@ import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.engine.test.Deployment;
 import org.flowable.variable.service.impl.el.NoExecutionVariableScope;
 import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * @author Frederik Heremans
@@ -65,6 +69,81 @@ public class ExpressionManagerTest extends PluggableFlowableTestCase {
             expression.getValue((ExecutionEntity) runtimeService.createProcessInstanceQuery().processInstanceId(processInstance.getId()).includeProcessVariables().singleResult()));
 
         assertThat(value).isEqualTo((int) Short.MIN_VALUE);
+    }
+
+    @Test
+    @Deployment(resources = "org/flowable/engine/test/api/runtime/oneTaskProcess.bpmn20.xml")
+    public void testOverloadedMethodUsage() {
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("nodeVariable", processEngineConfiguration.getObjectMapper().createObjectNode());
+        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("oneTaskProcess", vars);
+
+        Expression expression = this.processEngineConfiguration.getExpressionManager().createExpression("#{nodeVariable.put('stringVar', 'String value').put('intVar', 10)}");
+        Object value = managementService.executeCommand(commandContext ->
+            expression.getValue((ExecutionEntity) runtimeService.createProcessInstanceQuery().processInstanceId(processInstance.getId()).includeProcessVariables().singleResult()));
+
+        Assertions.assertThat(value)
+            .isInstanceOfSatisfying(ObjectNode.class, node -> {
+                Assertions.assertThat(node.path("stringVar").textValue()).isEqualTo("String value");
+                Assertions.assertThat(node.path("intVar").intValue()).isEqualTo(10);
+            });
+    }
+
+    @Test
+    void testBeanInvocationPerformance() {
+        // With Odyseus
+        // 5.5s
+        // 4.8s
+        // 5s
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("bean", new MyBean());
+        VariableContainerWrapper variableContainer = new VariableContainerWrapper(variables);
+
+        int iterations = 10_000;
+        long start = System.nanoTime();
+        Object value = null;
+        for (int i = 0; i < iterations; i++) {
+            variables.put("param", "hello" + i);
+            Expression expression = processEngineConfiguration.getExpressionManager().createExpression("${bean.invoke(param)}");
+            value = expression.getValue(variableContainer);
+        }
+
+        long end = System.nanoTime();
+        System.out.println(value);
+
+        System.out.println("Run in " + ((end - start) / 1_000_000) + "ms");
+    }
+
+    @Test
+    void testStringConcatenationPerformance() {
+        // With Odyseus
+        // 278ms
+        // 200ms
+        // 268ms
+
+        Map<String, Object> variables = new HashMap<>();
+        VariableContainerWrapper variableContainer = new VariableContainerWrapper(variables);
+
+        int iterations = 100_000;
+        long start = System.nanoTime();
+        Object value = null;
+        for (int i = 0; i < iterations; i++) {
+            variables.put("param", "hello" + i);
+            Expression expression = processEngineConfiguration.getExpressionManager().createExpression("Task name ${param}");
+            value = expression.getValue(variableContainer);
+        }
+
+        long end = System.nanoTime();
+        System.out.println(value);
+
+        System.out.println("Run in " + ((end - start) / 1_000_000) + "ms");
+    }
+
+    public static class MyBean {
+
+        public String invoke(String param) {
+            return param;
+        }
     }
 
     @Test
