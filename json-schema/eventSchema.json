@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://flowable.org/event.json",
+  "type": "object",
+  "title": "The Event Schema",
+  "description": "The Event Schema",
+  "required": [
+    "key"
+  ],
+  "properties": {
+    "key": {
+      "type": "string",
+      "minLength": 1,
+      "title": "Event key",
+      "description": "The identifier for the event"
+    },
+    "name": {
+      "type": "string",
+      "title": "Event Name",
+      "description": "The name of the event"
+    },
+    "correlationParameters": {
+      "type": "array",
+      "title": "Event correlation parameters",
+      "description": "The correlation parameters of the event",
+      "items": {
+        "$ref": "#/definitions/eventPayload"
+      }
+    },
+    "payload": {
+      "type": "array",
+      "title": "Event payload parameters",
+      "description": "The payload of the event",
+      "items": {
+        "$ref": "#/definitions/eventPayload"
+      }
+    }
+  },
+  "definitions": {
+    "eventPayload": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Payload name",
+          "description": "The name of the payload property"
+        },
+        "type": {
+          "type": "string",
+          "title": "Payload type",
+          "description": "The type of the payload",
+          "enum": [
+            "string",
+            "integer",
+            "double",
+            "boolean"
+          ]
+        }
+      },
+      "required": [
+        "name"
+      ]
+    }
+  }
+}

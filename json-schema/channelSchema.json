@@ -1,0 +1,521 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://flowable.org/channel.json",
+  "type": "object",
+  "title": "The Event Channel Schema",
+  "description": "The Channel Schema",
+  "required": [
+    "key",
+    "channelType",
+    "type"
+  ],
+  "properties": {
+    "key": {
+      "type": "string",
+      "minLength": 1,
+      "title": "Channel key",
+      "description": "The identifier for the channel"
+    },
+    "category": {
+      "type": "string",
+      "title": "Channel category",
+      "description": "Channel Category metadata"
+    },
+    "name": {
+      "type": "string",
+      "title": "Channel Name",
+      "description": "The name of the channel"
+    },
+    "description": {
+      "type": "string",
+      "title": "Channel Description",
+      "description": "The description of the channel"
+    },
+    "channelType": {
+      "type": "string",
+      "title": "Channel channel type",
+      "description": "The channel type of the channel. Default known types are inbound and outbound",
+      "enum": [
+        "inbound",
+        "outbound"
+      ]
+    },
+    "type": {
+      "type": "string",
+      "title": "Channel type",
+      "description": "The type of the channel. Default known types are jms, kafka, rabbit",
+      "enum": [
+        "kafka",
+        "jms",
+        "rabbit"
+      ]
+    }
+  },
+  "definitions": {
+    "inboundChannel": {
+      "properties": {
+        "deserializerType": {
+          "type": "string",
+          "title": "Deserializer",
+          "description": "The type of the deserializer",
+          "enum": [
+            "json",
+            "xml",
+            "expression"
+          ]
+        },
+        "deserializerDelegateExpression": {
+          "type": "string",
+          "title": "Deserializer delegate expression",
+          "description": "An expression which resolves to an instance of InboundEventDeserializer"
+        },
+        "payloadExtractorDelegateExpression": {
+          "type": "string",
+          "title": "Payload Extractor delegate expression",
+          "description": "An expression which resolves to an instance of InboundEventPayloadExtractor"
+        },
+        "eventTransformerDelegateExpression": {
+          "type": "string",
+          "title": "Event Transformer delegate expression",
+          "description": "An expression which resolves to an instance of InboundEventTransformer"
+        },
+        "pipelineDelegateExpression": {
+          "type": "string",
+          "title": "Pipeline delegate expression",
+          "description": "An expression which resolves to an instance of InboundEventProcessingPipeline"
+        }
+      },
+      "required": [
+        "deserializerType"
+      ]
+    },
+    "chanelEventKeyDetection": {
+      "type": "object",
+      "title": "Channel Event Key Detection",
+      "description": "An explanation about the purpose of this instance.",
+      "properties": {
+        "fixedValue": {
+          "type": "string",
+          "title": "Fix event key value",
+          "description": "A fix event key value"
+        },
+        "jsonField": {
+          "type": "string",
+          "title": "Json field event key",
+          "description": "The json field which holds the key of the event"
+        },
+        "jsonPointerExpression": {
+          "type": "string",
+          "title": "Json pointer event key",
+          "description": "A json pointer in which the key of the event is located"
+        },
+        "xmlXPathExpression": {
+          "type": "string",
+          "title": "XML XPath event key",
+          "description": "An XPath Expression to locate the event key"
+        },
+        "delegateExpression": {
+          "type": "string",
+          "title": "Event key detector delegate expression",
+          "description": "An expression which resolves to an instance of InboundEventKeyDetector"
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "fixedValue"
+          ]
+        },
+        {
+          "required": [
+            "jsonField"
+          ]
+        },
+        {
+          "required": [
+            "jsonPointerExpression"
+          ]
+        },
+        {
+          "required": [
+            "xmlXPathExpression"
+          ]
+        },
+        {
+          "required": [
+            "delegateExpression"
+          ]
+        }
+      ]
+    },
+    "jmsInboundChannel": {
+      "properties": {
+        "destination": {
+          "type": "string",
+          "title": "JMS destination",
+          "description": "The JMS Destination (Queue) to listen to"
+        },
+        "selector": {
+          "type": "string",
+          "title": "JMS Message selector",
+          "description": "JMS Message selector for filtering which messages to received"
+        },
+        "subscription": {
+          "type": "string",
+          "title": "JMS Subscription name",
+          "description": "JMS name for the durable subscription"
+        },
+        "concurrency": {
+          "type": "string",
+          "title": "JMS Concurrency limit",
+          "description": "JMS Concurrency limit for the listener"
+        }
+      },
+      "required": [
+        "destination"
+      ]
+    },
+    "rabbitInboundChannel": {
+      "properties": {
+        "queues": {
+          "type": "array",
+          "minItems": 1,
+          "title": "Rabbit Queue names",
+          "description": "The queue names to listen to",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclusive": {
+          "type": "boolean",
+          "title": "Rabbit Exclusive consumer",
+          "description": "Whether a single consumer in the container will have exclusive use of the queues, preventing other consumers from receiving messages from the queue(s)."
+        },
+        "priority": {
+          "type": "string",
+          "title": "Rabbit priority",
+          "description": "Priority of the Rabbit Endpoint"
+        },
+        "admin": {
+          "type": "string",
+          "title": "RabbitAdmin bean name",
+          "description": "The bean name of the custom RabbitAdmin bean that should be used"
+        },
+        "concurrency": {
+          "type": "string",
+          "title": "Rabbit Concurrency",
+          "description": "Rabbit Concurrency for the listener"
+        },
+        "executor": {
+          "type": "string",
+          "title": "Rabbit TaskExecutor bean name",
+          "description": "The bean name of the custom TaskExecutor that should be used for the Rabbit container"
+        },
+        "ackMode": {
+          "type": "string",
+          "title": "Rabbit Acknowledge mode",
+          "description": "The custom acknowledge mode for the Rabbit container. Overrides the one from the globally configured one"
+        }
+      },
+      "required": [
+        "queues"
+      ]
+    },
+    "kafkaInboundChannel": {
+      "properties": {
+        "groupId": {
+          "type": "string",
+          "title": "Kafka group id",
+          "description": "The group id of the Kafka consumer"
+        },
+        "topics": {
+          "type": "array",
+          "minItems": 1,
+          "title": "Kafka topics",
+          "description": "The Kafka topics to listen to",
+          "items": {
+            "type": "string"
+          }
+        },
+        "topicPattern": {
+          "type": "string",
+          "title": "Kafka topics pattern",
+          "description": "The Kafka topic pattern to listen to"
+        },
+        "clientIdPrefix": {
+          "type": "string",
+          "title": "Kafka client id prefix",
+          "description": "The prefix for the Kafka client"
+        },
+        "concurrency": {
+          "type": "string",
+          "title": "Kafka Concurrency",
+          "description": "Kafka Concurrency for the listener"
+        },
+        "customProperties": {
+          "type": "array",
+          "title": "Kafka custom properties for the consumer",
+          "description": "Custom properties for the kafka consumer",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "title": "Kafka property name",
+                "description": "The name of the custom Kafka property"
+              },
+              "value": {
+                "type": "string",
+                "title": "Kafka property value",
+                "description": "The value of the custom Kafka property"
+              }
+            },
+            "required": [
+              "name",
+              "value"
+            ]
+          }
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "topics"
+          ]
+        },
+        {
+          "required": [
+            "topicPattern"
+          ]
+        }
+      ]
+    },
+    "delegateExpressionInboundChannel": {
+      "properties": {
+        "adapterDelegateExpression": {
+          "type": "string",
+          "title": "Channel adapter delegate expression",
+          "description": "An expression which resolves to an instance of InboundEventChannelAdapter"
+        }
+      },
+      "required": [
+        "adapterDelegateExpression"
+      ]
+    },
+    "outboundChannel": {
+      "properties": {
+        "serializerType": {
+          "type": "string",
+          "title": "Serializer",
+          "description": "The type of the serializer",
+          "enum": [
+            "json",
+            "xml",
+            "expression"
+          ]
+        },
+        "serializerDelegateExpression": {
+          "type": "string",
+          "title": "Serializer Delegate expression",
+          "description": "An expression which resolves to an instance of OutboundEventSerializer"
+        },
+        "pipelineDelegateExpression": {
+          "type": "string",
+          "title": "Pipeline delegate expression",
+          "description": "An expression which resolves to an instance of OutboundEventProcessingPipeline"
+        }
+      },
+      "required": [
+        "serializerType"
+      ]
+    },
+    "jmsOutboundChannel": {
+      "properties": {
+        "destination": {
+          "type": "string",
+          "title": "JMS Destination",
+          "description": "The destination to which the event should be send"
+        }
+      },
+      "required": [
+        "destination"
+      ]
+    },
+    "rabbitOutboundChannel": {
+      "properties": {
+        "routingKey": {
+          "type": "string",
+          "title": "Rabbit routing key",
+          "description": "The routing to which the event should be send"
+        },
+        "exchange": {
+          "type": "string",
+          "title": "Rabbit exchange",
+          "description": "The exchange to which the event should be send"
+        }
+      },
+      "required": [
+        "routingKey"
+      ]
+    },
+    "kafkaOutboundChannel": {
+      "properties": {
+        "topic": {
+          "type": "string",
+          "title": "Kafka topic",
+          "description": "The topic to which the event should be send"
+        },
+        "recordKey": {
+          "type": "string",
+          "title": "Kafka record key",
+          "description": "The optional key of the record to which the event should be send"
+        }
+      },
+      "required": [
+        "topic"
+      ]
+    },
+    "delegateExpressionOutboundChannel": {
+      "properties": {
+        "adapterDelegateExpression": {
+          "type": "string",
+          "title": "Channel adapter delegate expression",
+          "description": "An expression which resolves to an instance of OutboundEventChannelAdapter"
+        }
+      },
+      "required": [
+        "adapterDelegateExpression"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "channelType": {
+            "const": "inbound"
+          }
+        }
+      },
+      "then": {
+        "allOf": [
+          {
+            "$ref": "#/definitions/inboundChannel"
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "jms"
+                }
+              }
+            },
+            "then": {
+              "$ref": "#/definitions/jmsInboundChannel"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "rabbit"
+                }
+              }
+            },
+            "then": {
+              "$ref": "#/definitions/rabbitInboundChannel"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "kafka"
+                }
+              }
+            },
+            "then": {
+              "$ref": "#/definitions/kafkaInboundChannel"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "expression"
+                }
+              }
+            },
+            "then": {
+              "$ref": "#/definitions/delegateExpressionInboundChannel"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "channelType": {
+            "const": "outbound"
+          }
+        }
+      },
+      "then": {
+        "allOf": [
+          {
+            "$ref": "#/definitions/outboundChannel"
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "jms"
+                }
+              }
+            },
+            "then": {
+              "$ref": "#/definitions/jmsOutboundChannel"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "rabbit"
+                }
+              }
+            },
+            "then": {
+              "$ref": "#/definitions/rabbitOutboundChannel"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "kafka"
+                }
+              }
+            },
+            "then": {
+              "$ref": "#/definitions/kafkaOutboundChannel"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "expression"
+                }
+              }
+            },
+            "then": {
+              "$ref": "#/definitions/delegateExpressionOutboundChannel"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
