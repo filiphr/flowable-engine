@@ -45,6 +45,7 @@ public abstract class AbstractFlowableVariableExpressionFunction implements Flow
     protected Method method;
     protected String functionName;
     protected Collection<String> functionNamesOptions;
+    protected String variableScopeName = VariableContainerELResolver.VARIABLE_CONTAINER_KEY;
 
     public AbstractFlowableVariableExpressionFunction(String functionName) {
         this(Collections.singletonList(functionName), functionName);
@@ -53,7 +54,6 @@ public abstract class AbstractFlowableVariableExpressionFunction implements Flow
     public AbstractFlowableVariableExpressionFunction(List<String> functionNameOptions, String functionName) {
         this.functionNamesOptions = new LinkedHashSet<>(functionNameOptions);
         this.functionName = functionName;
-        this.method = findMethod(functionName);
 
     }
 
@@ -89,6 +89,11 @@ public abstract class AbstractFlowableVariableExpressionFunction implements Flow
 
     @Override
     public Method functionMethod() {
+        if (method != null) {
+            return method;
+        }
+
+        method = findMethod(functionName);
         return method;
     }
 
@@ -108,8 +113,8 @@ public abstract class AbstractFlowableVariableExpressionFunction implements Flow
     @Override
     public Collection<String> getFunctionNames() {
         Collection<String> functionNames = new LinkedHashSet<>();
-        for (String functionPrefix : FUNCTION_PREFIXES) {
-            for (String functionNameOption : functionNamesOptions) {
+        for (String functionPrefix : prefixes()) {
+            for (String functionNameOption : localNames()) {
                 functionNames.add(functionPrefix + ":" + functionNameOption);
             }
         }
@@ -119,6 +124,7 @@ public abstract class AbstractFlowableVariableExpressionFunction implements Flow
 
     @Override
     public AstFunction createFunction(String name, int index, AstParameters parameters, boolean varargs, FlowableExpressionParser parser) {
+        Method method = functionMethod();
         int parametersCardinality = parameters.getCardinality();
         int methodParameterCount = method.getParameterCount();
         if (method.isVarArgs() || parametersCardinality < methodParameterCount) {
@@ -126,7 +132,7 @@ public abstract class AbstractFlowableVariableExpressionFunction implements Flow
             // then create an identifier for the variableContainer
             // and analyze the parameters
             List<AstNode> newParameters = new ArrayList<>(parametersCardinality + 1);
-            newParameters.add(parser.createIdentifier(VariableContainerELResolver.VARIABLE_CONTAINER_KEY));
+            newParameters.add(parser.createIdentifier(variableScopeName));
 
             if (methodParameterCount >= 1) {
                 // If the first parameter is an identifier we have to convert it to a text node
