@@ -21,7 +21,7 @@ import org.springframework.kafka.core.KafkaOperations;
 /**
  * @author Filip Hrisafov
  */
-public class KafkaOperationsOutboundEventChannelAdapter implements OutboundEventChannelAdapter<String> {
+public class KafkaOperationsOutboundEventChannelAdapter implements OutboundEventChannelAdapter<Object> {
 
     protected KafkaOperations<Object, Object> kafkaOperations;
     protected String topic;
@@ -34,7 +34,7 @@ public class KafkaOperationsOutboundEventChannelAdapter implements OutboundEvent
     }
 
     @Override
-    public void sendEvent(String rawEvent) {
+    public void sendEvent(Object rawEvent) {
         try {
             kafkaOperations.send(topic, key, rawEvent).get();
         } catch (InterruptedException e) {

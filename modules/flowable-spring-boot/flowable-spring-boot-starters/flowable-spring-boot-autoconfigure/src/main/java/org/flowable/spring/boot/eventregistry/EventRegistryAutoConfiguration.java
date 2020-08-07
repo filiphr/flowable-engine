@@ -258,10 +258,13 @@ public class EventRegistryAutoConfiguration extends AbstractSpringEngineAutoConf
         @Bean("kafkaChannelDefinitionProcessor")
         @ConditionalOnMissingBean(name = "kafkaChannelDefinitionProcessor")
         public KafkaChannelDefinitionProcessor kafkaChannelDefinitionProcessor(KafkaListenerEndpointRegistry endpointRegistry,
-            KafkaOperations<Object, Object> kafkaOperations) {
+            ObjectProvider<KafkaOperations> defaultKafkaOperations) {
             KafkaChannelDefinitionProcessor kafkaChannelDefinitionProcessor = new KafkaChannelDefinitionProcessor();
             kafkaChannelDefinitionProcessor.setEndpointRegistry(endpointRegistry);
-            kafkaChannelDefinitionProcessor.setKafkaOperations(kafkaOperations);
+            KafkaOperations kafkaOperations = defaultKafkaOperations.getIfAvailable();
+            if (kafkaOperations != null) {
+                kafkaChannelDefinitionProcessor.setKafkaOperations(kafkaOperations);
+            }
 
             return kafkaChannelDefinitionProcessor;
         }

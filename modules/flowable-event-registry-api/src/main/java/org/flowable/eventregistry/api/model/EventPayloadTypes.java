@@ -23,5 +23,6 @@ public interface EventPayloadTypes {
     String DOUBLE = "double";
     String BOOLEAN = "boolean";
     String JSON = "json";
+    String OBJECT = "object";
 
 }

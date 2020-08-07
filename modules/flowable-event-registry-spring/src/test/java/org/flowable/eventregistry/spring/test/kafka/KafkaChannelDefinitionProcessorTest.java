@@ -59,6 +59,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 /**
  * @author Filip Hrisafov
  */
@@ -79,6 +82,8 @@ class KafkaChannelDefinitionProcessorTest {
 
     @Autowired
     protected ConsumerFactory<Object, Object> consumerFactory;
+
+    protected ObjectMapper objectMapper = new ObjectMapper();
 
     protected TestEventConsumer testEventConsumer;
 
@@ -487,6 +492,107 @@ class KafkaChannelDefinitionProcessorTest {
                             + "  name: 'Kermit the Frog'"
                             + "}");
                 });
+        } finally {
+            eventRepositoryService.deleteDeployment(deployment.getId());
+        }
+
+    }
+
+    @Test
+    void eventWithSinglePayloadInstanceShouldBeSendUsingCustomKafkaOperations() {
+        createTopic("outbound-customer");
+
+        EventDeployment deployment = eventRepositoryService.createDeployment()
+                .addClasspathResource("org/flowable/eventregistry/spring/test/deployment/kafkaOutboundEvent.event")
+                .addClasspathResource("org/flowable/eventregistry/spring/test/deployment/kafkaCustomOperationsOutboundChannel.channel")
+                .deploy();
+
+
+        try (Consumer<Object, Object> consumer = consumerFactory.createConsumer("test", "testClient")) {
+            consumer.subscribe(Collections.singleton("outbound-customer"));
+
+            ChannelModel channelModel = eventRepositoryService.getChannelModelByKey("outboundCustomer");
+
+            ObjectNode customer = objectMapper.createObjectNode()
+                    .put("customer", "kermit")
+                    .put("name", "Kermit the Frog");
+
+            Collection<EventPayloadInstance> payloadInstances = new ArrayList<>();
+            payloadInstances.add(new EventPayloadInstanceImpl(new EventPayload("customer", EventPayloadTypes.JSON), customer));
+            EventInstance kermitEvent = new EventInstanceImpl("customer", payloadInstances);
+
+            ConsumerRecords<Object, Object> records = consumer.poll(Duration.ofSeconds(2));
+            assertThat(records).isEmpty();
+            consumer.commitSync();
+            consumer.seekToBeginning(Collections.singleton(new TopicPartition("outbound-customer", 0)));
+
+            eventRegistry.sendEventOutbound(kermitEvent, Collections.singleton(channelModel));
+
+            records = consumer.poll(Duration.ofSeconds(2));
+
+            assertThat(records)
+                    .hasSize(1)
+                    .first()
+                    .isNotNull()
+                    .satisfies(record -> {
+                        assertThat(record.key()).isEqualTo("customer");
+                        assertThatJson(record.value())
+                                .isEqualTo("{"
+                                        + "  customer: 'kermit',"
+                                        + "  name: 'Kermit the Frog'"
+                                        + "}");
+                    });
+        } finally {
+            eventRepositoryService.deleteDeployment(deployment.getId());
+        }
+
+    }
+
+    @Test
+    void eventWithMultiplePayloadInstancesShouldUseSingleObjectPayloadShouldBeSendUsingCustomKafkaOperations() {
+        createTopic("outbound-customer");
+
+        EventDeployment deployment = eventRepositoryService.createDeployment()
+                .addClasspathResource("org/flowable/eventregistry/spring/test/deployment/kafkaOutboundEvent.event")
+                .addClasspathResource("org/flowable/eventregistry/spring/test/deployment/kafkaCustomOperationsOutboundChannel.channel")
+                .deploy();
+
+
+        try (Consumer<Object, Object> consumer = consumerFactory.createConsumer("test", "testClient")) {
+            consumer.subscribe(Collections.singleton("outbound-customer"));
+
+            ChannelModel channelModel = eventRepositoryService.getChannelModelByKey("outboundCustomer");
+
+            ObjectNode customer = objectMapper.createObjectNode()
+                    .put("customer", "kermit")
+                    .put("name", "Kermit the Frog");
+
+            Collection<EventPayloadInstance> payloadInstances = new ArrayList<>();
+            payloadInstances.add(new EventPayloadInstanceImpl(new EventPayload("randomData", EventPayloadTypes.STRING), "randomData"));
+            payloadInstances.add(new EventPayloadInstanceImpl(new EventPayload("customer", EventPayloadTypes.OBJECT), customer));
+            EventInstance kermitEvent = new EventInstanceImpl("customer", payloadInstances);
+
+            ConsumerRecords<Object, Object> records = consumer.poll(Duration.ofSeconds(2));
+            assertThat(records).isEmpty();
+            consumer.commitSync();
+            consumer.seekToBeginning(Collections.singleton(new TopicPartition("outbound-customer", 0)));
+
+            eventRegistry.sendEventOutbound(kermitEvent, Collections.singleton(channelModel));
+
+            records = consumer.poll(Duration.ofSeconds(2));
+
+            assertThat(records)
+                    .hasSize(1)
+                    .first()
+                    .isNotNull()
+                    .satisfies(record -> {
+                        assertThat(record.key()).isEqualTo("customer");
+                        assertThatJson(record.value())
+                                .isEqualTo("{"
+                                        + "  customer: 'kermit',"
+                                        + "  name: 'Kermit the Frog'"
+                                        + "}");
+                    });
         } finally {
             eventRepositoryService.deleteDeployment(deployment.getId());
         }

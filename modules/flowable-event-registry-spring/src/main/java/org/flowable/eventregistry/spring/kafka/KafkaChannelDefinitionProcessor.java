@@ -21,6 +21,7 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.flowable.common.engine.api.FlowableIllegalStateException;
 import org.flowable.eventregistry.api.ChannelModelProcessor;
 import org.flowable.eventregistry.api.EventRegistry;
 import org.flowable.eventregistry.api.EventRepositoryService;
@@ -113,9 +114,32 @@ public class KafkaChannelDefinitionProcessor implements BeanFactoryAware, Channe
     protected void processOutboundDefinition(KafkaOutboundChannelModel channelModel) {
         String topic = channelModel.getTopic();
         if (channelModel.getOutboundEventChannelAdapter() == null && StringUtils.hasText(topic)) {
+            KafkaOperations<Object, Object> kafkaOperations = resolveKafkaOperations(channelModel);
             channelModel.setOutboundEventChannelAdapter(new KafkaOperationsOutboundEventChannelAdapter(
                             kafkaOperations, topic, channelModel.getRecordKey()));
         }
+    }
+
+    protected KafkaOperations<Object, Object> resolveKafkaOperations(KafkaOutboundChannelModel channelModel) {
+        String kafkaOperationsBean = channelModel.getKafkaOperationsBean();
+        if (!StringUtils.hasText(kafkaOperationsBean)) {
+            if (kafkaOperations != null) {
+                return kafkaOperations;
+            }
+
+            throw new FlowableIllegalStateException(
+                    "There are no default kafka operations configured. Either provide default kafka operations or define a kafkaOperationsBean for the channel");
+        }
+
+        Object kafkaOperations = resolveExpression(kafkaOperationsBean);
+        if (kafkaOperations instanceof KafkaOperations) {
+            return (KafkaOperations<Object, Object>) kafkaOperations;
+        }
+
+        throw new FlowableIllegalStateException(
+                "The [kafkaOperationsBean] must resolve to an instance of KafkaOperations. Resolved to [" + kafkaOperations + "] for [" + kafkaOperationsBean
+                        + "]");
+
     }
 
     protected Integer resolveExpressionAsInteger(String value, String attribute) {
@@ -195,9 +219,7 @@ public class KafkaChannelDefinitionProcessor implements BeanFactoryAware, Channe
     }
 
     protected Object resolveExpression(String value) {
-        String resolvedValue = resolve(value);
-
-        return this.resolver.evaluate(resolvedValue, this.expressionContext);
+        return this.resolver.evaluate(value, this.expressionContext);
     }
 
     @SuppressWarnings("unchecked")

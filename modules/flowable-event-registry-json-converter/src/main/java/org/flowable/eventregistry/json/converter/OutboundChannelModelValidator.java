@@ -32,6 +32,7 @@ public class OutboundChannelModelValidator implements ChannelValidator {
         supportedSerializers.add("json");
         supportedSerializers.add("xml");
         supportedSerializers.add("expression");
+        supportedSerializers.add("object");
     }
 
     public OutboundChannelModelValidator(Collection<String> supportedSerializers) {

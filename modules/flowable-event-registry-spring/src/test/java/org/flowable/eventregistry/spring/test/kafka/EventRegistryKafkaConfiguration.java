@@ -26,6 +26,7 @@ import org.flowable.eventregistry.spring.test.config.EventRegistryEngineTestConf
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
@@ -37,6 +38,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.support.LoggingProducerListener;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.testcontainers.containers.KafkaContainer;
 
 /**
@@ -80,8 +82,20 @@ public class EventRegistryKafkaConfiguration {
     }
 
     @Bean
+    @Primary
     public KafkaTemplate<?, ?> kafkaTemplate(ProducerFactory<Object, Object> producerFactory) {
         KafkaTemplate<Object, Object> kafkaTemplate = new KafkaTemplate<>(producerFactory);
+        kafkaTemplate.setProducerListener(new LoggingProducerListener<>());
+
+        return kafkaTemplate;
+    }
+
+    @Bean
+    public KafkaTemplate<?, ?> jsonKafkaTemplate(ProducerFactory<Object, Object> producerFactory) {
+        Map<String, Object> configOverrides = new HashMap<>();
+        configOverrides.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+
+        KafkaTemplate<Object, Object> kafkaTemplate = new KafkaTemplate<>(producerFactory, configOverrides);
         kafkaTemplate.setProducerListener(new LoggingProducerListener<>());
 
         return kafkaTemplate;

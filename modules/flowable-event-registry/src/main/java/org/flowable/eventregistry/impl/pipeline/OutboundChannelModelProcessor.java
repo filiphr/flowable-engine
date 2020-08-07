@@ -73,6 +73,9 @@ public class OutboundChannelModelProcessor implements ChannelModelProcessor {
                         "The channel key " + inboundChannelModel.getKey()
                             + " is using expression deserialization, but pipelineDelegateExpression was not set.");
                 }
+            } else if ("object".equals(inboundChannelModel.getSerializerType())) {
+                // We can reuse the same instance as it doesn't have any state
+                eventProcessingPipeline = ObjectOutboundEventProcessingPipeline.INSTANCE;
             }  else {
                 eventProcessingPipeline = null;
             }

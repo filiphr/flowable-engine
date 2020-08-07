@@ -23,6 +23,7 @@ public class KafkaOutboundChannelModel extends OutboundChannelModel {
 
     protected String topic;
     protected String recordKey;
+    protected String kafkaOperationsBean;
     
     public KafkaOutboundChannelModel() {
         super();
@@ -43,5 +44,13 @@ public class KafkaOutboundChannelModel extends OutboundChannelModel {
 
     public void setRecordKey(String recordKey) {
         this.recordKey = recordKey;
+    }
+
+    public String getKafkaOperationsBean() {
+        return kafkaOperationsBean;
+    }
+
+    public void setKafkaOperationsBean(String kafkaOperationsBean) {
+        this.kafkaOperationsBean = kafkaOperationsBean;
     }
 }
