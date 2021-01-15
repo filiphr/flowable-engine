@@ -273,6 +273,7 @@ public class VerifyDatabaseOperationsTest extends PluggableFlowableTestCase {
                     "JobEntityImpl", 1L);
 
             assertDatabaseUpdates("org.flowable.job.service.impl.cmd.ExecuteJobCmd",
+                    "org.flowable.engine.impl.persistence.entity.CountingExecutionEntityImpl", 1L,
                     "org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl", 2L
                     );
 

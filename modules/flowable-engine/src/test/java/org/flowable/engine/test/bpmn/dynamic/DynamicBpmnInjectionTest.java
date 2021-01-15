@@ -25,7 +25,7 @@ import org.flowable.engine.history.HistoricActivityInstance;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.impl.dynamic.DynamicEmbeddedSubProcessBuilder;
 import org.flowable.engine.impl.dynamic.DynamicUserTaskBuilder;
-import org.flowable.engine.impl.persistence.CountingExecutionEntity;
+import org.flowable.engine.impl.persistence.entity.ExecutionEntity;
 import org.flowable.engine.impl.test.HistoryTestHelper;
 import org.flowable.engine.impl.test.PluggableFlowableTestCase;
 import org.flowable.engine.repository.Deployment;
@@ -88,7 +88,7 @@ public class DynamicBpmnInjectionTest extends PluggableFlowableTestCase {
         
         if (processEngineConfiguration.getPerformanceSettings().isEnableExecutionRelationshipCounts()) {
             Execution execution = runtimeService.createExecutionQuery().executionId(injectedTask.getExecutionId()).singleResult();
-            assertThat(((CountingExecutionEntity) execution).getTaskCount()).isEqualTo(1);
+            assertThat(((ExecutionEntity) execution).getCountingExecutionEntity().getTaskCount()).isEqualTo(1);
         }
 
         List<Task> tasks = taskService.createTaskQuery().processInstanceId(processInstance.getId()).list();
@@ -198,7 +198,7 @@ public class DynamicBpmnInjectionTest extends PluggableFlowableTestCase {
         
         if (processEngineConfiguration.getPerformanceSettings().isEnableExecutionRelationshipCounts()) {
             Execution execution = runtimeService.createExecutionQuery().executionId(injectedTask.getExecutionId()).singleResult();
-            assertThat(((CountingExecutionEntity) execution).getTaskCount()).isEqualTo(1);
+            assertThat(((ExecutionEntity) execution).getCountingExecutionEntity().getTaskCount()).isEqualTo(1);
         }
 
         List<Task> tasks = taskService.createTaskQuery().processInstanceId(processInstance.getId()).orderByTaskName().asc().list();
@@ -242,7 +242,7 @@ public class DynamicBpmnInjectionTest extends PluggableFlowableTestCase {
         
         if (processEngineConfiguration.getPerformanceSettings().isEnableExecutionRelationshipCounts()) {
             Execution execution = runtimeService.createExecutionQuery().activityId("usertaskV2").singleResult();
-            assertThat(((CountingExecutionEntity) execution).getTaskCount()).isEqualTo(1);
+            assertThat(((ExecutionEntity) execution).getCountingExecutionEntity().getTaskCount()).isEqualTo(1);
         }
         
         List<IdentityLink> identityLinks = repositoryService.getIdentityLinksForProcessDefinition(processInstance.getProcessDefinitionId());
