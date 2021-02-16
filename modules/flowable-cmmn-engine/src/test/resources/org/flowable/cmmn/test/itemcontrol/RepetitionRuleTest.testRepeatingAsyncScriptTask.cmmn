@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/CMMN/20151109/MODEL" xmlns:flowable="http://flowable.org/cmmn"
+             xmlns:cmmndi="http://www.omg.org/spec/CMMN/20151109/CMMNDI" xmlns:dc="http://www.omg.org/spec/CMMN/20151109/DC"
+             targetNamespace="http://flowable.org/cmmn">
+    <case id="repeatingAsyncScriptTask">
+        <casePlanModel id="onecaseplanmodel1" name="Case plan model" flowable:formFieldValidation="false">
+            <planItem id="planItem2" name="Script task" definitionRef="scriptTask1">
+                <itemControl>
+                    <repetitionRule flowable:counterVariable="repetitionCounter" flowable:collectionVariable="${collectionVar}"/>
+                </itemControl>
+            </planItem>
+            <task id="repetitionServiceTask" name="Service task" flowable:type="java"/>
+            <task id="scriptTask1" name="Script task" flowable:async="true" flowable:exclusive="true" flowable:type="script" flowable:scriptFormat="groovy">
+                <extensionElements>
+                    <flowable:field name="script">
+                        <flowable:string><![CDATA[java.lang.Thread.sleep(300)]]></flowable:string>
+                    </flowable:field>
+                </extensionElements>
+            </task>
+        </casePlanModel>
+    </case>
+    <cmmndi:CMMNDI>
+        <cmmndi:CMMNDiagram id="CMMNDiagram_repeatingAsyncScriptTask">
+            <cmmndi:CMMNShape id="CMMNShape_onecaseplanmodel1" cmmnElementRef="onecaseplanmodel1">
+                <dc:Bounds height="754.0" width="758.0" x="30.0" y="45.0"/>
+                <cmmndi:CMMNLabel/>
+            </cmmndi:CMMNShape>
+            <cmmndi:CMMNShape id="CMMNShape_planItem1" cmmnElementRef="planItem1">
+                <dc:Bounds height="80.0" width="100.0" x="256.0" y="211.0"/>
+                <cmmndi:CMMNLabel/>
+            </cmmndi:CMMNShape>
+            <cmmndi:CMMNShape id="CMMNShape_planItem2" cmmnElementRef="planItem2">
+                <dc:Bounds height="80.0" width="100.0" x="300.0" y="405.0"/>
+                <cmmndi:CMMNLabel/>
+            </cmmndi:CMMNShape>
+        </cmmndi:CMMNDiagram>
+    </cmmndi:CMMNDI>
+</definitions>

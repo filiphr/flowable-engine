@@ -18,6 +18,9 @@ import static org.assertj.core.api.Assertions.entry;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.flowable.cmmn.api.runtime.CaseInstance;
 import org.flowable.cmmn.api.runtime.GenericEventListenerInstance;
@@ -34,6 +37,7 @@ import org.junit.Test;
 
 /**
  * @author Joram Barrez
+ * @author Filip Hrisafov
  */
 public class RepetitionRuleTest extends FlowableCmmnTestCase {
 
@@ -560,4 +564,63 @@ public class RepetitionRuleTest extends FlowableCmmnTestCase {
         assertCaseInstanceEnded(caseInstance);
     }
 
+//    @Test
+//    @CmmnDeployment
+//    public void testRepeatingAsyncScriptTask() {
+//        List<Integer> collection = IntStream.range(0, 10)
+//                .boxed()
+//                .collect(Collectors.toList());
+//        CaseInstance caseInstance = cmmnRuntimeService.createCaseInstanceBuilder()
+//                .caseDefinitionKey("repeatingAsyncScriptTask")
+//                .transientVariable("collectionVar", collection)
+//                .start();
+//
+//        List<Job> jobs = cmmnManagementService.createJobQuery().list();
+//        // There are 10 jobs for each async execution
+//        assertThat(jobs).hasSize(10);
+//
+//        // When a job fails it is moved to the timer jobs, so it can be executed later
+//        waitForJobExecutorToProcessAllJobs();
+//
+//        jobs = cmmnManagementService.createJobQuery().list();
+//        assertThat(jobs).isEmpty();
+//        List<Job> timerJobs = cmmnManagementService.createTimerJobQuery().list();
+//        assertThat(timerJobs).isEmpty();
+//
+//        List<Job> deadLetterJobs = cmmnManagementService.createDeadLetterJobQuery().list();
+//        assertThat(deadLetterJobs).isEmpty();
+//
+//        assertCaseInstanceEnded(caseInstance);
+//    }
+//
+//    @Test
+//    @CmmnDeployment
+//    public void testRepeatingAsyncNonExclusiveScriptTask() {
+//        List<Integer> collection = IntStream.range(0, 10)
+//                .boxed()
+//                .collect(Collectors.toList());
+//        CaseInstance caseInstance = cmmnRuntimeService.createCaseInstanceBuilder()
+//                .caseDefinitionKey("repeatingAsyncScriptTask")
+//                .transientVariable("collectionVar", collection)
+//                .start();
+//
+//        List<Job> jobs = cmmnManagementService.createJobQuery().list();
+//        // There are 10 jobs for each async execution
+//        assertThat(jobs).hasSize(10);
+//
+//        // When a job fails it is moved to the timer jobs, so it can be executed later
+//        waitForJobExecutorToProcessAllJobs();
+//
+//        jobs = cmmnManagementService.createJobQuery().list();
+//        assertThat(jobs).isEmpty();
+//        List<Job> timerJobs = cmmnManagementService.createTimerJobQuery().list();
+//        assertThat(timerJobs).isEmpty();
+//
+//        List<Job> deadLetterJobs = cmmnManagementService.createDeadLetterJobQuery().list();
+//        assertThat(deadLetterJobs).isEmpty();
+//
+//        cmmnRuntimeService.evaluateCriteria(caseInstance.getId());
+//
+//        assertCaseInstanceEnded(caseInstance);
+//    }
 }
