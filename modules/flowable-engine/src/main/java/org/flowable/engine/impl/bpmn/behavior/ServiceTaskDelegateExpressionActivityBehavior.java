@@ -27,6 +27,7 @@ import org.flowable.engine.DynamicBpmnConstants;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.delegate.FutureJavaDelegate;
 import org.flowable.engine.delegate.JavaDelegate;
+import org.flowable.engine.delegate.TriggerListener;
 import org.flowable.engine.impl.bpmn.helper.DelegateExpressionUtil;
 import org.flowable.engine.impl.bpmn.helper.ErrorPropagation;
 import org.flowable.engine.impl.bpmn.helper.SkipExpressionUtil;
@@ -92,6 +93,18 @@ public class ServiceTaskDelegateExpressionActivityBehavior extends TaskActivityB
                         "Triggered service task with delegate " + delegate, execution);
             }
 
+        } else if (triggerable && delegate instanceof TriggerListener) {
+            if (loggingSessionEnabled) {
+                BpmnLoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_SERVICE_TASK_BEFORE_TRIGGER,
+                        "Triggering service task with delegate " + delegate, execution);
+            }
+
+            ((TriggerListener) delegate).trigger(execution);
+
+            if (loggingSessionEnabled) {
+                BpmnLoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_SERVICE_TASK_AFTER_TRIGGER,
+                        "Triggered service task with delegate " + delegate, execution);
+            }
         } else if (loggingSessionEnabled) {
             if (!triggerable) {
                 BpmnLoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_SERVICE_TASK_WRONG_TRIGGER,

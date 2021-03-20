@@ -50,9 +50,51 @@ public class TriggerableServiceTaskTest extends PluggableFlowableTestCase {
 
     @Test
     @Deployment
+    public void testClassDelegateAsTriggerListener() {
+        String processId = runtimeService.startProcessInstanceByKey("process").getProcessInstanceId();
+
+        Execution execution = runtimeService.createExecutionQuery().processInstanceId(processId).activityId("service1").singleResult();
+        assertThat(execution).isNotNull();
+        int count = (int) runtimeService.getVariable(processId, "count");
+        assertThat(count).isEqualTo(1);
+
+        Map<String,Object> processVariables = new HashMap<>();
+        processVariables.put("count", ++count);
+        runtimeService.trigger(execution.getId(), processVariables, null);
+
+        execution = runtimeService.createExecutionQuery().processInstanceId(processId).activityId("usertask1").singleResult();
+        assertThat(execution).isNotNull();
+        assertThat(runtimeService.getVariable(processId, "count")).isEqualTo(3);
+    }
+
+    @Test
+    @Deployment
     public void testDelegateExpression() {
         Map<String, Object> varMap = new HashMap<>();
         varMap.put("triggerableServiceTask", new TriggerableServiceTask());
+
+        String processId = runtimeService.startProcessInstanceByKey("process", varMap).getProcessInstanceId();
+
+        Execution execution = runtimeService.createExecutionQuery().processInstanceId(processId).activityId("service1").singleResult();
+        assertThat(execution).isNotNull();
+        int count = (int) runtimeService.getVariable(processId, "count");
+        assertThat(count).isEqualTo(1);
+
+        Map<String,Object> processVariables = new HashMap<>();
+        processVariables.put("count", ++count);
+        runtimeService.trigger(execution.getId(), processVariables, null);
+
+        execution = runtimeService.createExecutionQuery().processInstanceId(processId).activityId("usertask1").singleResult();
+        assertThat(execution).isNotNull();
+        assertThat(runtimeService.getVariable(processId, "count")).isEqualTo(3);
+    }
+
+
+    @Test
+    @Deployment(resources = "org/flowable/engine/test/bpmn/servicetask/TriggerableServiceTaskTest.testDelegateExpression.bpmn20.xml")
+    public void testDelegateExpressionAsTriggerListener() {
+        Map<String, Object> varMap = new HashMap<>();
+        varMap.put("triggerableServiceTask", new TriggerableServiceTaskWithTriggerListener());
 
         String processId = runtimeService.startProcessInstanceByKey("process", varMap).getProcessInstanceId();
 

@@ -19,6 +19,7 @@ import org.flowable.common.engine.impl.logging.LoggingSessionConstants;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.delegate.ExecutionListener;
 import org.flowable.engine.delegate.JavaDelegate;
+import org.flowable.engine.delegate.TriggerListener;
 import org.flowable.engine.impl.bpmn.helper.SkipExpressionUtil;
 import org.flowable.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.flowable.engine.impl.delegate.ActivityBehavior;
@@ -67,6 +68,20 @@ public class ServiceTaskJavaDelegateActivityBehavior extends TaskActivityBehavio
             
             leave(execution);
         
+        } else if (triggerable && javaDelegate instanceof TriggerListener) {
+            if (processEngineConfiguration.isLoggingSessionEnabled()) {
+                BpmnLoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_SERVICE_TASK_BEFORE_TRIGGER,
+                        "Triggering service task with java class " + javaDelegate.getClass().getName(), execution);
+            }
+
+            ((TriggerListener) javaDelegate).trigger(execution);
+
+            if (processEngineConfiguration.isLoggingSessionEnabled()) {
+                BpmnLoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_SERVICE_TASK_AFTER_TRIGGER,
+                        "Triggered service task with java class " + javaDelegate.getClass().getName(), execution);
+            }
+
+            leave(execution);
         } else {
             if (processEngineConfiguration.isLoggingSessionEnabled()) {
                 if (!triggerable) {
