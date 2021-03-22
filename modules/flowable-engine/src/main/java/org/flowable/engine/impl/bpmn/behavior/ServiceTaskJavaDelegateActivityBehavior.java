@@ -19,11 +19,10 @@ import org.flowable.common.engine.impl.logging.LoggingSessionConstants;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.delegate.ExecutionListener;
 import org.flowable.engine.delegate.JavaDelegate;
-import org.flowable.engine.delegate.TriggerListener;
+import org.flowable.engine.delegate.TriggerableDelegate;
 import org.flowable.engine.impl.bpmn.helper.SkipExpressionUtil;
 import org.flowable.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.flowable.engine.impl.delegate.ActivityBehavior;
-import org.flowable.engine.impl.delegate.TriggerableActivityBehavior;
 import org.flowable.engine.impl.delegate.invocation.JavaDelegateInvocation;
 import org.flowable.engine.impl.util.BpmnLoggingSessionUtil;
 import org.flowable.engine.impl.util.CommandContextUtil;
@@ -53,13 +52,13 @@ public class ServiceTaskJavaDelegateActivityBehavior extends TaskActivityBehavio
         CommandContext commandContext = CommandContextUtil.getCommandContext();
         ProcessEngineConfigurationImpl processEngineConfiguration = CommandContextUtil.getProcessEngineConfiguration(commandContext);
         
-        if (triggerable && javaDelegate instanceof TriggerableActivityBehavior) {
+        if (triggerable && javaDelegate instanceof TriggerableDelegate) {
             if (processEngineConfiguration.isLoggingSessionEnabled()) {
                 BpmnLoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_SERVICE_TASK_BEFORE_TRIGGER, 
                                 "Triggering service task with java class " + javaDelegate.getClass().getName(), execution);
             }
             
-            ((TriggerableActivityBehavior) javaDelegate).trigger(execution, signalName, signalData);
+            ((TriggerableDelegate) javaDelegate).trigger(execution);
             
             if (processEngineConfiguration.isLoggingSessionEnabled()) {
                 BpmnLoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_SERVICE_TASK_AFTER_TRIGGER,
@@ -68,20 +67,6 @@ public class ServiceTaskJavaDelegateActivityBehavior extends TaskActivityBehavio
             
             leave(execution);
         
-        } else if (triggerable && javaDelegate instanceof TriggerListener) {
-            if (processEngineConfiguration.isLoggingSessionEnabled()) {
-                BpmnLoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_SERVICE_TASK_BEFORE_TRIGGER,
-                        "Triggering service task with java class " + javaDelegate.getClass().getName(), execution);
-            }
-
-            ((TriggerListener) javaDelegate).trigger(execution);
-
-            if (processEngineConfiguration.isLoggingSessionEnabled()) {
-                BpmnLoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_SERVICE_TASK_AFTER_TRIGGER,
-                        "Triggered service task with java class " + javaDelegate.getClass().getName(), execution);
-            }
-
-            leave(execution);
         } else {
             if (processEngineConfiguration.isLoggingSessionEnabled()) {
                 if (!triggerable) {
@@ -89,7 +74,7 @@ public class ServiceTaskJavaDelegateActivityBehavior extends TaskActivityBehavio
                                     "Service task with java class triggered but not triggerable " + javaDelegate.getClass().getName(), execution);
                 } else {
                     BpmnLoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_SERVICE_TASK_WRONG_TRIGGER, 
-                                    "Service task with java class triggered but not implementing TriggerableActivityBehavior " + javaDelegate.getClass().getName(), execution);
+                                    "Service task with java class triggered but not implementing TriggerableDelegate " + javaDelegate.getClass().getName(), execution);
                 }
             }
         }

@@ -18,7 +18,7 @@ package org.flowable.engine.delegate;
  *
  * @author Filip Hrisafov
  */
-public interface TriggerListener {
+public interface TriggerableDelegate {
 
     void trigger(DelegateExecution execution);
 }

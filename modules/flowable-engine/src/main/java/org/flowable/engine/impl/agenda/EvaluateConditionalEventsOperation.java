@@ -26,8 +26,8 @@ import org.flowable.bpmn.model.SubProcess;
 import org.flowable.common.engine.api.delegate.Expression;
 import org.flowable.common.engine.impl.interceptor.CommandContext;
 import org.flowable.engine.debug.ExecutionTreeUtil;
+import org.flowable.engine.delegate.TriggerableDelegate;
 import org.flowable.engine.impl.delegate.ActivityBehavior;
-import org.flowable.engine.impl.delegate.TriggerableActivityBehavior;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntity;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntityManager;
 import org.flowable.engine.impl.util.CommandContextUtil;
@@ -63,8 +63,8 @@ public class EvaluateConditionalEventsOperation extends AbstractOperation {
                 if (!event.getEventDefinitions().isEmpty() && event.getEventDefinitions().get(0) instanceof ConditionalEventDefinition) {
                 
                     ActivityBehavior activityBehavior = (ActivityBehavior) ((FlowNode) currentFlowElement).getBehavior();
-                    if (activityBehavior instanceof TriggerableActivityBehavior) {
-                        ((TriggerableActivityBehavior) activityBehavior).trigger(childExecutionEntity, null, null);
+                    if (activityBehavior instanceof TriggerableDelegate) {
+                        ((TriggerableDelegate) activityBehavior).trigger(childExecutionEntity);
                     }
                 }
             

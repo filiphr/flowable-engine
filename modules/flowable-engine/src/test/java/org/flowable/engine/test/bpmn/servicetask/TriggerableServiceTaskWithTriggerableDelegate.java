@@ -17,13 +17,12 @@ import java.io.Serializable;
 
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.delegate.JavaDelegate;
-import org.flowable.engine.delegate.TriggerListener;
-import org.flowable.engine.impl.delegate.TriggerableActivityBehavior;
+import org.flowable.engine.delegate.TriggerableDelegate;
 
 /**
  * @author Filip Hrisafov
  */
-public class TriggerableServiceTaskWithTriggerListener implements JavaDelegate, TriggerListener, Serializable {
+public class TriggerableServiceTaskWithTriggerableDelegate implements JavaDelegate, TriggerableDelegate, Serializable {
 
     @Override
     public void execute(DelegateExecution execution) {

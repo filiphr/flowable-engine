@@ -13,11 +13,17 @@
 package org.flowable.engine.impl.delegate;
 
 import org.flowable.engine.delegate.DelegateExecution;
+import org.flowable.engine.delegate.TriggerableDelegate;
 
 /**
  * @author Joram Barrez
  */
-public interface TriggerableActivityBehavior extends ActivityBehavior {
+public interface TriggerableActivityBehavior extends ActivityBehavior, TriggerableDelegate {
+
+    @Override
+    default void trigger(DelegateExecution execution) {
+        trigger(execution, null, null);
+    }
 
     void trigger(DelegateExecution execution, String signalEvent, Object signalData);
 

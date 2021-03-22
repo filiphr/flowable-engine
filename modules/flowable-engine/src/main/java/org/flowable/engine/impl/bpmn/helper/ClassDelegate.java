@@ -32,6 +32,7 @@ import org.flowable.engine.delegate.FutureJavaDelegate;
 import org.flowable.engine.delegate.JavaDelegate;
 import org.flowable.engine.delegate.TransactionDependentExecutionListener;
 import org.flowable.engine.delegate.TransactionDependentTaskListener;
+import org.flowable.engine.delegate.TriggerableDelegate;
 import org.flowable.engine.impl.bpmn.behavior.AbstractBpmnActivityBehavior;
 import org.flowable.engine.impl.bpmn.behavior.ServiceTaskFutureJavaDelegateActivityBehavior;
 import org.flowable.engine.impl.bpmn.behavior.ServiceTaskJavaDelegateActivityBehavior;
@@ -39,7 +40,6 @@ import org.flowable.engine.impl.bpmn.parser.FieldDeclaration;
 import org.flowable.engine.impl.context.BpmnOverrideContext;
 import org.flowable.engine.impl.delegate.ActivityBehavior;
 import org.flowable.engine.impl.delegate.SubProcessActivityBehavior;
-import org.flowable.engine.impl.delegate.TriggerableActivityBehavior;
 import org.flowable.engine.impl.delegate.invocation.ExecutionListenerInvocation;
 import org.flowable.engine.impl.delegate.invocation.TaskListenerInvocation;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntity;
@@ -215,13 +215,13 @@ public class ClassDelegate extends AbstractClassDelegate implements TaskListener
             activityBehaviorInstance = getActivityBehaviorInstance();
         }
 
-        if (activityBehaviorInstance instanceof TriggerableActivityBehavior) {
-            ((TriggerableActivityBehavior) activityBehaviorInstance).trigger(execution, signalName, signalData);
+        if (activityBehaviorInstance instanceof TriggerableDelegate) {
+            ((TriggerableDelegate) activityBehaviorInstance).trigger(execution);
             if (triggerable) {
                 leave(execution);
             }
         } else {
-            throw new FlowableException("signal() can only be called on a " + TriggerableActivityBehavior.class.getName() + " instance");
+            throw new FlowableException("signal() can only be called on a " + TriggerableDelegate.class.getName() + " instance");
         }
     }
 

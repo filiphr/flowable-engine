@@ -16,9 +16,9 @@ import org.flowable.bpmn.model.FlowElement;
 import org.flowable.bpmn.model.FlowNode;
 import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.impl.interceptor.CommandContext;
+import org.flowable.engine.delegate.TriggerableDelegate;
 import org.flowable.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.flowable.engine.impl.delegate.ActivityBehavior;
-import org.flowable.engine.impl.delegate.TriggerableActivityBehavior;
 import org.flowable.engine.impl.jobexecutor.AsyncTriggerJobHandler;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntity;
 import org.flowable.engine.impl.util.CommandContextUtil;
@@ -30,7 +30,7 @@ import org.flowable.job.service.impl.persistence.entity.JobEntity;
  * Operation that triggers a wait state and continues the process, leaving that activity.
  * 
  * The {@link ExecutionEntity} for this operations should be in a wait state (receive task for example) and have a {@link FlowElement} that has a behaviour that implements the
- * {@link TriggerableActivityBehavior}.
+ * {@link TriggerableDelegate}.
  * 
  * @author Joram Barrez
  */
@@ -53,10 +53,10 @@ public class TriggerExecutionOperation extends AbstractOperation {
         if (currentFlowElement instanceof FlowNode) {
 
             ActivityBehavior activityBehavior = (ActivityBehavior) ((FlowNode) currentFlowElement).getBehavior();
-            if (activityBehavior instanceof TriggerableActivityBehavior) {
+            if (activityBehavior instanceof TriggerableDelegate) {
 
                 if (!triggerAsync) {
-                    ((TriggerableActivityBehavior) activityBehavior).trigger(execution, null, null);
+                    ((TriggerableDelegate) activityBehavior).trigger(execution);
                     
                 } else {
                     ProcessEngineConfigurationImpl processEngineConfiguration = CommandContextUtil.getProcessEngineConfiguration(commandContext);
@@ -71,7 +71,7 @@ public class TriggerExecutionOperation extends AbstractOperation {
             } else {
                 throw new FlowableException("Cannot trigger execution with id " + execution.getId()
                     + " : the activityBehavior " + activityBehavior.getClass() + " does not implement the "
-                    + TriggerableActivityBehavior.class.getName() + " interface");
+                    + TriggerableDelegate.class.getName() + " interface");
 
             }
 

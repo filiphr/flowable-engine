@@ -27,11 +27,11 @@ import org.flowable.common.engine.impl.logging.LoggingSessionConstants;
 import org.flowable.engine.delegate.BpmnError;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.delegate.FutureJavaDelegate;
+import org.flowable.engine.delegate.TriggerableDelegate;
 import org.flowable.engine.impl.bpmn.helper.ErrorPropagation;
 import org.flowable.engine.impl.bpmn.helper.SkipExpressionUtil;
 import org.flowable.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.flowable.engine.impl.delegate.ActivityBehavior;
-import org.flowable.engine.impl.delegate.TriggerableActivityBehavior;
 import org.flowable.engine.impl.delegate.invocation.FutureJavaDelegateInvocation;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntity;
 import org.flowable.engine.impl.util.BpmnLoggingSessionUtil;
@@ -64,13 +64,13 @@ public class ServiceTaskFutureJavaDelegateActivityBehavior extends TaskActivityB
         CommandContext commandContext = CommandContextUtil.getCommandContext();
         ProcessEngineConfigurationImpl processEngineConfiguration = CommandContextUtil.getProcessEngineConfiguration(commandContext);
 
-        if (triggerable && futureJavaDelegate instanceof TriggerableActivityBehavior) {
+        if (triggerable && futureJavaDelegate instanceof TriggerableDelegate) {
             if (processEngineConfiguration.isLoggingSessionEnabled()) {
                 BpmnLoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_SERVICE_TASK_BEFORE_TRIGGER,
                                 "Triggering service task with java class " + futureJavaDelegate.getClass().getName(), execution);
             }
 
-            ((TriggerableActivityBehavior) futureJavaDelegate).trigger(execution, signalName, signalData);
+            ((TriggerableDelegate) futureJavaDelegate).trigger(execution);
 
             if (processEngineConfiguration.isLoggingSessionEnabled()) {
                 BpmnLoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_SERVICE_TASK_AFTER_TRIGGER,

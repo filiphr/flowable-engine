@@ -94,7 +94,7 @@ public class TriggerableServiceTaskTest extends PluggableFlowableTestCase {
     @Deployment(resources = "org/flowable/engine/test/bpmn/servicetask/TriggerableServiceTaskTest.testDelegateExpression.bpmn20.xml")
     public void testDelegateExpressionAsTriggerListener() {
         Map<String, Object> varMap = new HashMap<>();
-        varMap.put("triggerableServiceTask", new TriggerableServiceTaskWithTriggerListener());
+        varMap.put("triggerableServiceTask", new TriggerableServiceTaskWithTriggerableDelegate());
 
         String processId = runtimeService.startProcessInstanceByKey("process", varMap).getProcessInstanceId();
 
