@@ -13,8 +13,12 @@
 
 package org.flowable.common.engine.impl.db;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.flowable.common.engine.api.query.Query.NullHandlingOnOrder;
 import org.flowable.common.engine.api.query.QueryProperty;
@@ -30,6 +34,19 @@ public class ListQueryParameterObject {
     public enum ResultType {
         LIST, LIST_PAGE, SINGLE_RESULT, COUNT
     }
+
+    protected static class OrderBy {
+
+        protected final String columnName;
+        protected final String direction;
+        protected final NullHandlingOnOrder nullHandlingOnOrder;
+
+        public OrderBy(String columnName, String direction, NullHandlingOnOrder nullHandlingOnOrder) {
+            this.columnName = columnName;
+            this.direction = direction;
+            this.nullHandlingOnOrder = nullHandlingOnOrder;
+        }
+    }
     
     public static final String SORTORDER_ASC = "asc";
     public static final String SORTORDER_DESC = "desc";
@@ -39,6 +56,8 @@ public class ListQueryParameterObject {
     protected Object parameter;
     protected String orderByColumns;
     protected Map<String, Boolean> orderByColumnMap = new TreeMap<>();
+    protected Collection<OrderBy> orderByCollection = new ArrayList<>();
+    protected OrderBy defaultOrderBy = new OrderBy("RES.ID_", "asc", null);
     protected QueryProperty orderProperty;
     protected String nullHandlingColumn;
     protected NullHandlingOnOrder nullHandlingOnOrder;
@@ -68,6 +87,8 @@ public class ListQueryParameterObject {
         } else {
             orderByColumnMap.put(column, false);
         }
+
+        orderByCollection.add(new OrderBy(column, sortOrder, nullHandlingOnOrder));
 
         String defaultOrderByClause = column + " " + sortOrder;
 
@@ -124,6 +145,10 @@ public class ListQueryParameterObject {
         }
 
     }
+
+    public boolean isNeedsPaging() {
+        return firstResult >= 0;
+    }
     
     public int getFirstResult() {
         return firstResult;
@@ -159,6 +184,87 @@ public class ListQueryParameterObject {
     public void setParameter(Object parameter) {
         this.parameter = parameter;
     }
+
+    public boolean hasOrderBy() {
+        if (!orderByCollection.isEmpty()) {
+            return true;
+        }
+
+        return defaultOrderBy != null;
+    }
+
+    public String getOrderByForWindow() {
+        return getNewOrderBy();
+    }
+
+    public String getOrderByForBody() {
+        if (isNeedsPaging()
+                && (AbstractEngineConfiguration.DATABASE_TYPE_DB2.equals(databaseType) || AbstractEngineConfiguration.DATABASE_TYPE_MSSQL.equals(databaseType)) ) {
+            return "";
+        } else {
+            return getNewOrderBy();
+        }
+    }
+
+    public String getNewOrderBy() {
+        Collection<OrderBy> orderBy;
+        if (!orderByCollection.isEmpty()) {
+            orderBy = orderByCollection;
+        } else if (defaultOrderBy != null) {
+            orderBy = Collections.singleton(defaultOrderBy);
+        } else {
+            orderBy = Collections.emptyList();
+        }
+
+        return orderBy.stream()
+                .map(this::mapOrderByToSql)
+                .collect(Collectors.joining(",", "order by ", ""));
+    }
+
+    protected String mapOrderByToSql(OrderBy by) {
+        NullHandlingOnOrder nullHandlingOnOrder = by.nullHandlingOnOrder;
+        if (nullHandlingOnOrder == null) {
+            return by.columnName + " " + by.direction;
+        } else if (nullHandlingOnOrder == NullHandlingOnOrder.NULLS_FIRST) {
+            if (AbstractEngineConfiguration.DATABASE_TYPE_H2.equals(databaseType)
+                    || AbstractEngineConfiguration.DATABASE_TYPE_HSQL.equals(databaseType)
+                    || AbstractEngineConfiguration.DATABASE_TYPE_POSTGRES.equals(databaseType)
+                    || AbstractEngineConfiguration.DATABASE_TYPE_COCKROACHDB.equals(databaseType)
+                    || AbstractEngineConfiguration.DATABASE_TYPE_ORACLE.equals(databaseType)) {
+                return by.columnName + " " + by.direction + " NULLS FIRST";
+            } else if (AbstractEngineConfiguration.DATABASE_TYPE_DB2.equals(databaseType)
+                    || AbstractEngineConfiguration.DATABASE_TYPE_MSSQL.equals(databaseType)
+                    || AbstractEngineConfiguration.DATABASE_TYPE_MYSQL.equals(databaseType)
+            ) {
+                // CASE WHEN <COLUMN_NAME> IS NULL
+                // THEN 0 ELSE 1 END ASC,
+                return "CASE WHEN " + by.columnName + " IS NULL THEN 0 ELSE 1 END, " + by.columnName + " " + by.direction;
+
+            } else {
+                return by.columnName + " " + by.direction + " NULLS FIRST";
+            }
+        } else {
+            if (AbstractEngineConfiguration.DATABASE_TYPE_H2.equals(databaseType)
+                    || AbstractEngineConfiguration.DATABASE_TYPE_HSQL.equals(databaseType)
+                    || AbstractEngineConfiguration.DATABASE_TYPE_POSTGRES.equals(databaseType)
+                    || AbstractEngineConfiguration.DATABASE_TYPE_COCKROACHDB.equals(databaseType)
+                    || AbstractEngineConfiguration.DATABASE_TYPE_ORACLE.equals(databaseType)) {
+                return by.columnName + " " + by.direction + " NULLS LAST";
+            } else if (AbstractEngineConfiguration.DATABASE_TYPE_DB2.equals(databaseType)
+                    || AbstractEngineConfiguration.DATABASE_TYPE_MSSQL.equals(databaseType)
+                    || AbstractEngineConfiguration.DATABASE_TYPE_MYSQL.equals(databaseType)
+            ) {
+                // CASE WHEN <COLUMN_NAME> IS NULL
+                // THEN 1 ELSE 0 END ASC,
+                return "CASE WHEN " + by.columnName + " IS NULL THEN 1 ELSE 0 END ASC, " + by.columnName + " " + by.direction;
+
+            } else {
+                return by.columnName + " " + by.direction + " NULLS LAST";
+            }
+        }
+    }
+
+
     
     public String getOrderBy() {
         // For db2 and sqlserver, when there is paging needed, the limitBefore and limitBetween is used.

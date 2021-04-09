@@ -838,8 +838,11 @@ public abstract class AbstractEngineConfiguration {
 
                 // set default properties
                 properties.put("limitBefore", "");
+                properties.put("limitBeforeNew", "");
                 properties.put("limitAfter", "");
+                properties.put("limitAfterNew", "");
                 properties.put("limitBetween", "");
+                properties.put("limitBetweenNew", "");
                 properties.put("limitBetweenNoDistinct", "");
                 properties.put("limitOuterJoinBetween", "");
                 properties.put("limitBeforeNativeQuery", "");
