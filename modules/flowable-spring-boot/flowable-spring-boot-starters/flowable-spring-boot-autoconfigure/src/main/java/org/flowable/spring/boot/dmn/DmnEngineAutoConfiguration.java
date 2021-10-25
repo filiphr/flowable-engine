@@ -18,23 +18,18 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.flowable.app.spring.SpringAppEngineConfiguration;
 import org.flowable.common.engine.api.scope.ScopeTypes;
 import org.flowable.common.spring.AutoDeploymentStrategy;
 import org.flowable.common.spring.CommonAutoDeploymentProperties;
 import org.flowable.dmn.engine.DmnEngine;
-import org.flowable.dmn.engine.configurator.DmnEngineConfigurator;
 import org.flowable.dmn.spring.SpringDmnEngineConfiguration;
 import org.flowable.dmn.spring.autodeployment.DefaultAutoDeploymentStrategy;
 import org.flowable.dmn.spring.autodeployment.ResourceParentFolderAutoDeploymentStrategy;
 import org.flowable.dmn.spring.autodeployment.SingleResourceAutoDeploymentStrategy;
-import org.flowable.dmn.spring.configurator.SpringDmnEngineConfigurator;
-import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.flowable.spring.boot.AbstractSpringEngineAutoConfiguration;
-import org.flowable.spring.boot.BaseEngineConfigurationWithConfigurers;
-import org.flowable.spring.boot.EngineConfigurationConfigurer;
 import org.flowable.spring.boot.FlowableAutoDeploymentProperties;
 import org.flowable.spring.boot.FlowableProperties;
+import org.flowable.spring.boot.MainEngineConfiguration;
 import org.flowable.spring.boot.ProcessEngineAutoConfiguration;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineAutoConfiguration;
@@ -43,11 +38,11 @@ import org.flowable.spring.boot.condition.ConditionalOnDmnEngine;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.io.Resource;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -73,7 +68,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
     AppEngineServicesAutoConfiguration.class,
     ProcessEngineServicesAutoConfiguration.class,
 })
-public class DmnEngineAutoConfiguration extends AbstractSpringEngineAutoConfiguration {
+// The order of the imports is important since they will be scanned by Spring in that order
+@Import({
+        MainEngineConfiguration.DmnEngineWithMain.class,
+        MainEngineConfiguration.DmnEngineWithoutMain.class,
+})
+public class DmnEngineAutoConfiguration extends AbstractSpringEngineAutoConfiguration<SpringDmnEngineConfiguration> {
 
     protected final FlowableDmnProperties dmnProperties;
     protected final FlowableAutoDeploymentProperties autoDeploymentProperties;
@@ -126,62 +126,10 @@ public class DmnEngineAutoConfiguration extends AbstractSpringEngineAutoConfigur
         deploymentStrategies.add(new ResourceParentFolderAutoDeploymentStrategy(deploymentProperties));
         configuration.setDeploymentStrategies(deploymentStrategies);
 
+        invokeConfigurers(configuration);
+
         return configuration;
     }
 
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnBean(type = {
-        "org.flowable.spring.SpringProcessEngineConfiguration"
-    })
-    @ConditionalOnMissingBean(type = {
-        "org.flowable.app.spring.SpringAppEngineConfiguration"
-    })
-    public static class DmnEngineProcessConfiguration extends BaseEngineConfigurationWithConfigurers<SpringDmnEngineConfiguration> {
-
-        @Bean
-        @ConditionalOnMissingBean(name = "dmnProcessEngineConfigurationConfigurer")
-        public EngineConfigurationConfigurer<SpringProcessEngineConfiguration> dmnProcessEngineConfigurationConfigurer(
-            DmnEngineConfigurator dmnEngineConfigurator
-        ) {
-            return processEngineConfiguration -> processEngineConfiguration.addConfigurator(dmnEngineConfigurator);
-        }
-
-        @Bean
-        @ConditionalOnMissingBean
-        public DmnEngineConfigurator dmnEngineConfigurator(SpringDmnEngineConfiguration configuration) {
-            SpringDmnEngineConfigurator dmnEngineConfigurator = new SpringDmnEngineConfigurator();
-            dmnEngineConfigurator.setDmnEngineConfiguration(configuration);
-            
-            invokeConfigurers(configuration);
-            
-            return dmnEngineConfigurator;
-        }
-    }
-    
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnBean(type = {
-        "org.flowable.app.spring.SpringAppEngineConfiguration"
-    })
-    public static class DmnEngineAppConfiguration extends BaseEngineConfigurationWithConfigurers<SpringDmnEngineConfiguration> {
-
-        @Bean
-        @ConditionalOnMissingBean(name = "dmnAppEngineConfigurationConfigurer")
-        public EngineConfigurationConfigurer<SpringAppEngineConfiguration> dmnAppEngineConfigurationConfigurer(
-            DmnEngineConfigurator dmnEngineConfigurator
-        ) {
-            return appEngineConfiguration -> appEngineConfiguration.addConfigurator(dmnEngineConfigurator);
-        }
-
-        @Bean
-        @ConditionalOnMissingBean
-        public DmnEngineConfigurator dmnEngineConfigurator(SpringDmnEngineConfiguration configuration) {
-            SpringDmnEngineConfigurator dmnEngineConfigurator = new SpringDmnEngineConfigurator();
-            dmnEngineConfigurator.setDmnEngineConfiguration(configuration);
-            
-            invokeConfigurers(configuration);
-            
-            return dmnEngineConfigurator;
-        }
-    }
 }
 

@@ -18,14 +18,11 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.flowable.app.spring.SpringAppEngineConfiguration;
 import org.flowable.cmmn.engine.CmmnEngine;
-import org.flowable.cmmn.engine.configurator.CmmnEngineConfigurator;
 import org.flowable.cmmn.spring.SpringCmmnEngineConfiguration;
 import org.flowable.cmmn.spring.autodeployment.DefaultAutoDeploymentStrategy;
 import org.flowable.cmmn.spring.autodeployment.ResourceParentFolderAutoDeploymentStrategy;
 import org.flowable.cmmn.spring.autodeployment.SingleResourceAutoDeploymentStrategy;
-import org.flowable.cmmn.spring.configurator.SpringCmmnEngineConfigurator;
 import org.flowable.common.engine.api.scope.ScopeTypes;
 import org.flowable.common.spring.AutoDeploymentStrategy;
 import org.flowable.common.spring.CommonAutoDeploymentProperties;
@@ -33,15 +30,13 @@ import org.flowable.common.spring.async.SpringAsyncTaskExecutor;
 import org.flowable.http.common.api.client.FlowableHttpClient;
 import org.flowable.job.service.impl.asyncexecutor.AsyncExecutor;
 import org.flowable.job.service.impl.asyncexecutor.AsyncJobExecutorConfiguration;
-import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.flowable.spring.boot.AbstractSpringEngineAutoConfiguration;
-import org.flowable.spring.boot.BaseEngineConfigurationWithConfigurers;
-import org.flowable.spring.boot.EngineConfigurationConfigurer;
 import org.flowable.spring.boot.FlowableAutoDeploymentProperties;
 import org.flowable.spring.boot.FlowableHttpProperties;
 import org.flowable.spring.boot.FlowableJobConfiguration;
 import org.flowable.spring.boot.FlowableMailProperties;
 import org.flowable.spring.boot.FlowableProperties;
+import org.flowable.spring.boot.MainEngineConfiguration;
 import org.flowable.spring.boot.ProcessEngineAutoConfiguration;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineAutoConfiguration;
@@ -56,7 +51,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -96,10 +90,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
     AppEngineServicesAutoConfiguration.class,
     ProcessEngineServicesAutoConfiguration.class
 })
+// The order of the imports is important since they will be scanned by Spring in that order
 @Import({
-    FlowableJobConfiguration.class
+        MainEngineConfiguration.CmmnEngineWithMain.class,
+        MainEngineConfiguration.CmmnEngineWithoutMain.class,
+        FlowableJobConfiguration.class
 })
-public class CmmnEngineAutoConfiguration extends AbstractSpringEngineAutoConfiguration {
+public class CmmnEngineAutoConfiguration extends AbstractSpringEngineAutoConfiguration<SpringCmmnEngineConfiguration> {
 
     protected final FlowableCmmnProperties cmmnProperties;
     protected final FlowableIdmProperties idmProperties;
@@ -246,64 +243,9 @@ public class CmmnEngineAutoConfiguration extends AbstractSpringEngineAutoConfigu
         configuration.setCleanInstancesBatchSize(flowableProperties.getHistoryCleaningBatchSize());
         configuration.setCleanInstancesSequentially(flowableProperties.isHistoryCleaningSequential());
 
+        invokeConfigurers(configuration);
+
         return configuration;
     }
 
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnBean(type = {
-        "org.flowable.spring.SpringProcessEngineConfiguration"
-    })
-    @ConditionalOnMissingBean(type = {
-        "org.flowable.app.spring.SpringAppEngineConfiguration"
-    })
-    public static class CmmnEngineProcessConfiguration extends BaseEngineConfigurationWithConfigurers<SpringCmmnEngineConfiguration> {
-
-        @Bean
-        @ConditionalOnMissingBean(name = "cmmnProcessEngineConfigurationConfigurer")
-        public EngineConfigurationConfigurer<SpringProcessEngineConfiguration> cmmnProcessEngineConfigurationConfigurer(
-            CmmnEngineConfigurator cmmnEngineConfigurator) {
-            return processEngineConfiguration -> processEngineConfiguration.addConfigurator(cmmnEngineConfigurator);
-        }
-
-        @Bean
-        @ConditionalOnMissingBean
-        public CmmnEngineConfigurator cmmnEngineConfigurator(SpringCmmnEngineConfiguration cmmnEngineConfiguration) {
-            SpringCmmnEngineConfigurator cmmnEngineConfigurator = new SpringCmmnEngineConfigurator();
-            cmmnEngineConfigurator.setCmmnEngineConfiguration(cmmnEngineConfiguration);
-
-            cmmnEngineConfiguration.setDisableIdmEngine(true);
-            cmmnEngineConfiguration.setDisableEventRegistry(true);
-            
-            invokeConfigurers(cmmnEngineConfiguration);
-            
-            return cmmnEngineConfigurator;
-        }
-    }
-    
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnBean(type = {
-        "org.flowable.app.spring.SpringAppEngineConfiguration"
-    })
-    public static class CmmnEngineAppConfiguration extends BaseEngineConfigurationWithConfigurers<SpringCmmnEngineConfiguration> {
-
-        @Bean
-        @ConditionalOnMissingBean(name = "cmmnAppEngineConfigurationConfigurer")
-        public EngineConfigurationConfigurer<SpringAppEngineConfiguration> cmmnAppEngineConfigurationConfigurer(CmmnEngineConfigurator cmmnEngineConfigurator) {
-            return appEngineConfiguration -> appEngineConfiguration.addConfigurator(cmmnEngineConfigurator);
-        }
-
-        @Bean
-        @ConditionalOnMissingBean
-        public CmmnEngineConfigurator cmmnEngineConfigurator(SpringCmmnEngineConfiguration cmmnEngineConfiguration) {
-            SpringCmmnEngineConfigurator cmmnEngineConfigurator = new SpringCmmnEngineConfigurator();
-            cmmnEngineConfigurator.setCmmnEngineConfiguration(cmmnEngineConfiguration);
-
-            cmmnEngineConfiguration.setDisableIdmEngine(true);
-            cmmnEngineConfiguration.setDisableEventRegistry(true);
-            
-            invokeConfigurers(cmmnEngineConfiguration);
-            
-            return cmmnEngineConfigurator;
-        }
-    }
 }

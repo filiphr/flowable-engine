@@ -53,6 +53,7 @@ import org.flowable.http.common.api.client.FlowableHttpClient;
 import org.flowable.idm.spring.SpringIdmEngineConfiguration;
 import org.flowable.job.service.impl.asyncexecutor.AsyncExecutor;
 import org.flowable.spring.SpringProcessEngineConfiguration;
+import org.flowable.spring.boot.MainEngineConfiguration;
 import org.flowable.spring.boot.ProcessEngineAutoConfiguration;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineAutoConfiguration;
@@ -166,8 +167,9 @@ public class CmmnEngineAutoConfigurationTest {
             assertThat(context)
                 .doesNotHaveBean(AppEngine.class)
                 .doesNotHaveBean(ProcessEngine.class)
-                .doesNotHaveBean("cmmnProcessEngineConfigurationConfigurer")
-                .doesNotHaveBean("cmmnAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.CmmnEngineWithoutMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.CmmnEngineWithMain.class)
+                .doesNotHaveBean("cmmnMainEngineConfigurator");
             CmmnEngine cmmnEngine = context.getBean(CmmnEngine.class);
             assertThat(cmmnEngine).as("Cmmn engine").isNotNull();
 
@@ -251,8 +253,9 @@ public class CmmnEngineAutoConfigurationTest {
                 assertThat(context)
                     .doesNotHaveBean(AppEngine.class)
                     .doesNotHaveBean(ProcessEngine.class)
-                    .doesNotHaveBean("cmmnProcessEngineConfigurationConfigurer")
-                    .doesNotHaveBean("cmmnAppEngineConfigurationConfigurer");
+                    .hasSingleBean(MainEngineConfiguration.CmmnEngineWithoutMain.class)
+                    .doesNotHaveBean(MainEngineConfiguration.CmmnEngineWithMain.class)
+                    .doesNotHaveBean("cmmnMainEngineConfigurator");
                 CmmnEngine cmmnEngine = context.getBean(CmmnEngine.class);
                 assertThat(cmmnEngine).as("Cmmn engine").isNotNull();
 
@@ -310,8 +313,9 @@ public class CmmnEngineAutoConfigurationTest {
                 assertThat(context)
                     .doesNotHaveBean(AppEngine.class)
                     .doesNotHaveBean(ProcessEngine.class)
-                    .doesNotHaveBean("cmmnProcessEngineConfigurationConfigurer")
-                    .doesNotHaveBean("cmmnAppEngineConfigurationConfigurer");
+                    .hasSingleBean(MainEngineConfiguration.CmmnEngineWithoutMain.class)
+                    .doesNotHaveBean(MainEngineConfiguration.CmmnEngineWithMain.class)
+                    .doesNotHaveBean("cmmnMainEngineConfigurator");
                 CmmnEngine cmmnEngine = context.getBean(CmmnEngine.class);
                 assertThat(cmmnEngine).as("Cmmn engine").isNotNull();
 
@@ -365,8 +369,9 @@ public class CmmnEngineAutoConfigurationTest {
         )).run(context -> {
             assertThat(context)
                 .doesNotHaveBean(AppEngine.class)
-                .hasBean("cmmnProcessEngineConfigurationConfigurer")
-                .doesNotHaveBean("cmmnAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.CmmnEngineWithMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.CmmnEngineWithoutMain.class)
+                .hasBean("cmmnMainEngineConfigurator");
             ProcessEngine processEngine = context.getBean(ProcessEngine.class);
             assertThat(processEngine).as("Process engine").isNotNull();
             CmmnEngineConfigurationApi cmmnProcessConfigurationApi = cmmnEngine(processEngine);
@@ -428,8 +433,9 @@ public class CmmnEngineAutoConfigurationTest {
             .run(context -> {
                 assertThat(context)
                     .doesNotHaveBean(AppEngine.class)
-                    .hasBean("cmmnProcessEngineConfigurationConfigurer")
-                    .doesNotHaveBean("cmmnAppEngineConfigurationConfigurer");
+                    .hasSingleBean(MainEngineConfiguration.CmmnEngineWithMain.class)
+                    .doesNotHaveBean(MainEngineConfiguration.CmmnEngineWithoutMain.class)
+                    .hasBean("cmmnMainEngineConfigurator");
                 ProcessEngine processEngine = context.getBean(ProcessEngine.class);
                 assertThat(processEngine).as("Process engine").isNotNull();
                 CmmnEngineConfigurationApi cmmnProcessConfigurationApi = cmmnEngine(processEngine);
@@ -516,8 +522,9 @@ public class CmmnEngineAutoConfigurationTest {
             ProcessEngineAutoConfiguration.class
         )).run(context -> {
             assertThat(context)
-                .doesNotHaveBean("cmmnProcessEngineConfigurationConfigurer")
-                .hasBean("cmmnAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.CmmnEngineWithMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.CmmnEngineWithoutMain.class)
+                .hasBean("cmmnMainEngineConfigurator");
             AppEngine appEngine = context.getBean(AppEngine.class);
             assertThat(appEngine).as("App engine").isNotNull();
             CmmnEngineConfigurationApi cmmnProcessConfigurationApi = cmmnEngine(appEngine);

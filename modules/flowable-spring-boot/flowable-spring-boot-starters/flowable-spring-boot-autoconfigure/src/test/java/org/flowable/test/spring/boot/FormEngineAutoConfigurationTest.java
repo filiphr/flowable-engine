@@ -43,6 +43,7 @@ import org.flowable.form.spring.autodeployment.DefaultAutoDeploymentStrategy;
 import org.flowable.form.spring.autodeployment.ResourceParentFolderAutoDeploymentStrategy;
 import org.flowable.form.spring.autodeployment.SingleResourceAutoDeploymentStrategy;
 import org.flowable.spring.SpringProcessEngineConfiguration;
+import org.flowable.spring.boot.MainEngineConfiguration;
 import org.flowable.spring.boot.ProcessEngineAutoConfiguration;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineAutoConfiguration;
@@ -76,10 +77,11 @@ public class FormEngineAutoConfigurationTest {
     public void standaloneFormEngineWithBasicDataSource() {
         contextRunner.run(context -> {
             assertThat(context)
+                .hasSingleBean(MainEngineConfiguration.FormEngineWithoutMain.class)
                 .doesNotHaveBean(AppEngine.class)
                 .doesNotHaveBean(ProcessEngine.class)
-                .doesNotHaveBean("formProcessEngineConfigurationConfigurer")
-                .doesNotHaveBean("formAppEngineConfigurationConfigurer");
+                .doesNotHaveBean(MainEngineConfiguration.FormEngineWithMain.class)
+                .doesNotHaveBean("formMainEngineConfigurator");
             FormEngine formEngine = context.getBean(FormEngine.class);
             assertThat(formEngine).as("Form engine").isNotNull();
             assertThat(context.getBean(FormService.class)).as("Form service")
@@ -101,7 +103,7 @@ public class FormEngineAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringFormEngineConfiguration.class
                         );
                 });
@@ -151,8 +153,9 @@ public class FormEngineAutoConfigurationTest {
                 assertThat(context)
                     .doesNotHaveBean(AppEngine.class)
                     .doesNotHaveBean(ProcessEngine.class)
-                    .doesNotHaveBean("formProcessEngineConfigurationConfigurer")
-                    .doesNotHaveBean("formAppEngineConfigurationConfigurer");
+                    .hasSingleBean(MainEngineConfiguration.FormEngineWithoutMain.class)
+                    .doesNotHaveBean(MainEngineConfiguration.FormEngineWithMain.class)
+                    .doesNotHaveBean("formMainEngineConfigurator");
                 FormEngine formEngine = context.getBean(FormEngine.class);
                 assertThat(formEngine).as("Form engine").isNotNull();
                 assertThat(context.getBean(FormService.class)).as("Form service")
@@ -174,7 +177,7 @@ public class FormEngineAutoConfigurationTest {
                     .getBean(CustomUserEngineConfigurerConfiguration.class)
                     .satisfies(configuration -> {
                         assertThat(configuration.getInvokedConfigurations())
-                            .containsExactly(
+                            .containsExactlyInAnyOrder(
                                 SpringFormEngineConfiguration.class
                             );
                     });
@@ -219,8 +222,9 @@ public class FormEngineAutoConfigurationTest {
                 assertThat(context)
                     .doesNotHaveBean(AppEngine.class)
                     .doesNotHaveBean(ProcessEngine.class)
-                    .doesNotHaveBean("formProcessEngineConfigurationConfigurer")
-                    .doesNotHaveBean("formAppEngineConfigurationConfigurer");
+                    .hasSingleBean(MainEngineConfiguration.FormEngineWithoutMain.class)
+                    .doesNotHaveBean(MainEngineConfiguration.FormEngineWithMain.class)
+                    .doesNotHaveBean("formMainEngineConfigurator");
                 FormEngine formEngine = context.getBean(FormEngine.class);
                 assertThat(formEngine).as("Form engine").isNotNull();
                 assertThat(context.getBean(FormService.class)).as("Form service")
@@ -242,7 +246,7 @@ public class FormEngineAutoConfigurationTest {
                     .getBean(CustomUserEngineConfigurerConfiguration.class)
                     .satisfies(configuration -> {
                         assertThat(configuration.getInvokedConfigurations())
-                            .containsExactly(
+                            .containsExactlyInAnyOrder(
                                 SpringFormEngineConfiguration.class
                             );
                     });
@@ -284,8 +288,9 @@ public class FormEngineAutoConfigurationTest {
         )).run(context -> {
             assertThat(context)
                 .doesNotHaveBean(AppEngine.class)
-                .hasBean("formProcessEngineConfigurationConfigurer")
-                .doesNotHaveBean("formAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.FormEngineWithMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.FormEngineWithoutMain.class)
+                .hasBean("formMainEngineConfigurator");
             ProcessEngine processEngine = context.getBean(ProcessEngine.class);
             assertThat(processEngine).as("Process engine").isNotNull();
             FormEngineConfigurationApi formProcessConfigurationApi = formEngine(processEngine);
@@ -307,7 +312,7 @@ public class FormEngineAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringFormEngineConfiguration.class,
                             SpringProcessEngineConfiguration.class
                         );
@@ -327,8 +332,9 @@ public class FormEngineAutoConfigurationTest {
             ProcessEngineAutoConfiguration.class
         )).run(context -> {
             assertThat(context)
-                .doesNotHaveBean("formProcessEngineConfigurationConfigurer")
-                .hasBean("formAppEngineConfigurationConfigurer");
+                    .hasSingleBean(MainEngineConfiguration.FormEngineWithMain.class)
+                    .doesNotHaveBean(MainEngineConfiguration.FormEngineWithoutMain.class)
+                    .hasBean("formMainEngineConfigurator");
             AppEngine appEngine = context.getBean(AppEngine.class);
             assertThat(appEngine).as("App engine").isNotNull();
             FormEngineConfigurationApi formProcessConfigurationApi = formEngine(appEngine);
@@ -350,7 +356,7 @@ public class FormEngineAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringProcessEngineConfiguration.class,
                             SpringFormEngineConfiguration.class,
                             SpringAppEngineConfiguration.class

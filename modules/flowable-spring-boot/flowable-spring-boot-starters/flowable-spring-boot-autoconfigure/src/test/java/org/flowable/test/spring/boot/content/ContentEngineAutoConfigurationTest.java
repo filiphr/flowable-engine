@@ -32,6 +32,7 @@ import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.impl.util.EngineServiceUtil;
 import org.flowable.spring.SpringProcessEngineConfiguration;
+import org.flowable.spring.boot.MainEngineConfiguration;
 import org.flowable.spring.boot.ProcessEngineAutoConfiguration;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineAutoConfiguration;
@@ -67,8 +68,9 @@ public class ContentEngineAutoConfigurationTest {
             assertThat(context)
                 .doesNotHaveBean(AppEngine.class)
                 .doesNotHaveBean(ProcessEngine.class)
-                .doesNotHaveBean("contentProcessEngineConfigurationConfigurer")
-                .doesNotHaveBean("contentAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.ContentEngineWithoutMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.ContentEngineWithMain.class)
+                .doesNotHaveBean("contentMainEngineConfigurator");
             ContentEngine contentEngine = context.getBean(ContentEngine.class);
             assertThat(contentEngine).as("Content engine").isNotNull();
             assertAllServicesPresent(context, contentEngine);
@@ -77,7 +79,7 @@ public class ContentEngineAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringContentEngineConfiguration.class
                         );
                 });
@@ -93,8 +95,9 @@ public class ContentEngineAutoConfigurationTest {
         )).run(context -> {
             assertThat(context)
                 .doesNotHaveBean(AppEngine.class)
-                .hasBean("contentProcessEngineConfigurationConfigurer")
-                .doesNotHaveBean("contentAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.ContentEngineWithMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.ContentEngineWithoutMain.class)
+                .hasBean("contentMainEngineConfigurator");
             ProcessEngine processEngine = context.getBean(ProcessEngine.class);
             assertThat(processEngine).as("Process engine").isNotNull();
             ContentEngineConfigurationApi contentProcessConfigurationApi = contentEngine(processEngine);
@@ -110,7 +113,7 @@ public class ContentEngineAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringContentEngineConfiguration.class,
                             SpringProcessEngineConfiguration.class
                         );
@@ -131,8 +134,9 @@ public class ContentEngineAutoConfigurationTest {
             ProcessEngineAutoConfiguration.class
         )).run(context -> {
             assertThat(context)
-                .doesNotHaveBean("contentProcessEngineConfigurationConfigurer")
-                .hasBean("contentAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.ContentEngineWithMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.ContentEngineWithoutMain.class)
+                .hasBean("contentMainEngineConfigurator");
             AppEngine appEngine = context.getBean(AppEngine.class);
             assertThat(appEngine).as("App engine").isNotNull();
             ContentEngineConfigurationApi contentProcessConfigurationApi = contentEngine(appEngine);
@@ -148,7 +152,7 @@ public class ContentEngineAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringProcessEngineConfiguration.class,
                             SpringContentEngineConfiguration.class,
                             SpringAppEngineConfiguration.class

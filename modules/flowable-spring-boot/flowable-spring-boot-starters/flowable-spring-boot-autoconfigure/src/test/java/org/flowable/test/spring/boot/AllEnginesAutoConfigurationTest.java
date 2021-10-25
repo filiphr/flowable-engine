@@ -55,6 +55,7 @@ import org.flowable.idm.engine.IdmEngine;
 import org.flowable.idm.spring.SpringIdmEngineConfiguration;
 import org.flowable.idm.spring.configurator.SpringIdmEngineConfigurator;
 import org.flowable.spring.SpringProcessEngineConfiguration;
+import org.flowable.spring.boot.MainEngineConfiguratorHolder;
 import org.flowable.spring.boot.ProcessEngineAutoConfiguration;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineAutoConfiguration;
@@ -129,12 +130,12 @@ public class AllEnginesAutoConfigurationTest {
                     .hasSingleBean(SpringIdmEngineConfiguration.class)
                     .hasSingleBean(SpringEventRegistryEngineConfiguration.class)
                     .hasSingleBean(SpringProcessEngineConfiguration.class)
-                    .hasSingleBean(SpringCmmnEngineConfigurator.class)
-                    .hasSingleBean(SpringContentEngineConfigurator.class)
-                    .hasSingleBean(SpringDmnEngineConfigurator.class)
-                    .hasSingleBean(SpringFormEngineConfigurator.class)
-                    .hasSingleBean(SpringIdmEngineConfigurator.class)
-                    .hasSingleBean(SpringProcessEngineConfigurator.class);
+                    .hasBean("cmmnMainEngineConfigurator")
+                    .hasBean("contentMainEngineConfigurator")
+                    .hasBean("dmnMainEngineConfigurator")
+                    .hasBean("formMainEngineConfigurator")
+                    .hasBean("idmMainEngineConfigurator")
+                    .hasBean("processMainEngineConfigurator");
 
             SpringAppEngineConfiguration appEngineConfiguration = context.getBean(SpringAppEngineConfiguration.class);
             SpringCmmnEngineConfiguration cmmnEngineConfiguration = context.getBean(SpringCmmnEngineConfiguration.class);
@@ -173,20 +174,22 @@ public class AllEnginesAutoConfigurationTest {
                     .containsAllEntriesOf(eventEngineConfiguration.getEngineConfigurations())
                     .containsAllEntriesOf(processEngineConfiguration.getEngineConfigurations());
 
-            SpringCmmnEngineConfigurator cmmnConfigurator = context.getBean(SpringCmmnEngineConfigurator.class);
-            SpringContentEngineConfigurator contentConfigurator = context.getBean(SpringContentEngineConfigurator.class);
-            SpringDmnEngineConfigurator dmnConfigurator = context.getBean(SpringDmnEngineConfigurator.class);
-            SpringFormEngineConfigurator formConfigurator = context.getBean(SpringFormEngineConfigurator.class);
-            SpringIdmEngineConfigurator idmConfigurator = context.getBean(SpringIdmEngineConfigurator.class);
-            SpringEventRegistryConfigurator eventConfigurator = context.getBean(SpringEventRegistryConfigurator.class);
-            SpringProcessEngineConfigurator processConfigurator = context.getBean(SpringProcessEngineConfigurator.class);
-            assertThat(appEngineConfiguration.getConfigurators())
+            SpringCmmnEngineConfigurator cmmnConfigurator = (SpringCmmnEngineConfigurator) context.getBean("cmmnMainEngineConfigurator", MainEngineConfiguratorHolder.class).getEngineConfigurator();
+            SpringContentEngineConfigurator contentConfigurator = (SpringContentEngineConfigurator) context.getBean("contentMainEngineConfigurator", MainEngineConfiguratorHolder.class).getEngineConfigurator();
+            SpringDmnEngineConfigurator dmnConfigurator = (SpringDmnEngineConfigurator) context.getBean("dmnMainEngineConfigurator", MainEngineConfiguratorHolder.class).getEngineConfigurator();
+            SpringFormEngineConfigurator formConfigurator = (SpringFormEngineConfigurator) context.getBean("formMainEngineConfigurator", MainEngineConfiguratorHolder.class).getEngineConfigurator();
+            SpringIdmEngineConfigurator idmConfigurator = (SpringIdmEngineConfigurator) context.getBean("idmMainEngineConfigurator", MainEngineConfiguratorHolder.class).getEngineConfigurator();
+            SpringEventRegistryConfigurator eventConfigurator = (SpringEventRegistryConfigurator) context.getBean("eventRegistryMainEngineConfigurator", MainEngineConfiguratorHolder.class).getEngineConfigurator();
+            SpringProcessEngineConfigurator processConfigurator = (SpringProcessEngineConfigurator) context.getBean("processMainEngineConfigurator", MainEngineConfiguratorHolder.class).getEngineConfigurator();
+            assertThat(appEngineConfiguration.getAllConfigurators())
                     .as("AppEngineConfiguration configurators")
                     .containsExactly(
                             processConfigurator,
-                            contentConfigurator,
+                            eventConfigurator,
+                            idmConfigurator,
                             dmnConfigurator,
                             formConfigurator,
+                            contentConfigurator,
                             cmmnConfigurator
                     );
 

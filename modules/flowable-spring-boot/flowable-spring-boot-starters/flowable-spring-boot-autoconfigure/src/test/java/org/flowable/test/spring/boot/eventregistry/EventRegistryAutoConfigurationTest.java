@@ -44,6 +44,7 @@ import org.flowable.eventregistry.spring.kafka.KafkaChannelDefinitionProcessor;
 import org.flowable.eventregistry.spring.management.DefaultSpringEventRegistryChangeDetectionExecutor;
 import org.flowable.eventregistry.spring.rabbit.RabbitChannelDefinitionProcessor;
 import org.flowable.spring.SpringProcessEngineConfiguration;
+import org.flowable.spring.boot.MainEngineConfiguration;
 import org.flowable.spring.boot.ProcessEngineAutoConfiguration;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineAutoConfiguration;
@@ -85,8 +86,9 @@ public class EventRegistryAutoConfigurationTest {
                 .doesNotHaveBean(AppEngine.class)
                 .doesNotHaveBean(ProcessEngine.class)
                 .doesNotHaveBean(ChannelModelProcessor.class)
-                .doesNotHaveBean("eventProcessEngineConfigurationConfigurer")
-                .doesNotHaveBean("eventAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.EventRegistryEngineWithoutMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.EventRegistryEngineWithMain.class)
+                .doesNotHaveBean("eventRegistryMainEngineConfigurator");
             EventRegistryEngine eventRegistryEngine = context.getBean(EventRegistryEngine.class);
             assertThat(eventRegistryEngine).as("Event registry engine").isNotNull();
             assertAllServicesPresent(context, eventRegistryEngine);
@@ -134,8 +136,9 @@ public class EventRegistryAutoConfigurationTest {
             assertThat(context)
                 .doesNotHaveBean(AppEngine.class)
                 .doesNotHaveBean(ChannelModelProcessor.class)
-                .hasBean("eventProcessEngineConfigurationConfigurer")
-                .doesNotHaveBean("eventAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.EventRegistryEngineWithMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.EventRegistryEngineWithoutMain.class)
+                .hasBean("eventRegistryMainEngineConfigurator");
             ProcessEngine processEngine = context.getBean(ProcessEngine.class);
             assertThat(processEngine).as("Process engine").isNotNull();
             EventRegistryEngineConfiguration eventRegistryEngineConfiguration = eventRegistryEngine(processEngine);
@@ -173,7 +176,7 @@ public class EventRegistryAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringEventRegistryEngineConfiguration.class,
                             SpringProcessEngineConfiguration.class
                         );
@@ -194,8 +197,9 @@ public class EventRegistryAutoConfigurationTest {
         )).run(context -> {
             assertThat(context)
                 .doesNotHaveBean(ChannelModelProcessor.class)
-                .doesNotHaveBean("eventProcessEngineConfigurationConfigurer")
-                .hasBean("eventAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.EventRegistryEngineWithMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.EventRegistryEngineWithoutMain.class)
+                .hasBean("eventRegistryMainEngineConfigurator");
             AppEngine appEngine = context.getBean(AppEngine.class);
             assertThat(appEngine).as("App engine").isNotNull();
             EventRegistryEngineConfiguration eventRegistryEngineConfiguration = eventRegistryEngine(appEngine);
@@ -233,7 +237,7 @@ public class EventRegistryAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringProcessEngineConfiguration.class,
                             SpringEventRegistryEngineConfiguration.class,
                             SpringAppEngineConfiguration.class

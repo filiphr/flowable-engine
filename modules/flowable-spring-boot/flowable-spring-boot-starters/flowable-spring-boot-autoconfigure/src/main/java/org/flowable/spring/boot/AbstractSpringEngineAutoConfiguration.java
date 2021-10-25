@@ -12,6 +12,7 @@
  */
 package org.flowable.spring.boot;
 
+import org.flowable.common.engine.impl.AbstractEngineConfiguration;
 import org.flowable.common.spring.SpringEngineConfiguration;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -22,7 +23,7 @@ import org.springframework.transaction.PlatformTransactionManager;
  * @author Filip Hrisafov
  * @author Javier Casal
  */
-public abstract class AbstractSpringEngineAutoConfiguration extends AbstractEngineAutoConfiguration {
+public abstract class AbstractSpringEngineAutoConfiguration<T extends AbstractEngineConfiguration> extends AbstractEngineAutoConfiguration<T> {
 
     public AbstractSpringEngineAutoConfiguration(FlowableProperties flowableProperties) {
         super(flowableProperties);

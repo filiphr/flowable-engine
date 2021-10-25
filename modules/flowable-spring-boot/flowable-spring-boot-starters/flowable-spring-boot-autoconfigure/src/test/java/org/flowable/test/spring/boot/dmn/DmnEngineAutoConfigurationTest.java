@@ -45,6 +45,7 @@ import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.impl.util.EngineServiceUtil;
 import org.flowable.spring.SpringProcessEngineConfiguration;
+import org.flowable.spring.boot.MainEngineConfiguration;
 import org.flowable.spring.boot.ProcessEngineAutoConfiguration;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineAutoConfiguration;
@@ -84,8 +85,9 @@ public class DmnEngineAutoConfigurationTest {
             assertThat(context)
                 .doesNotHaveBean(AppEngine.class)
                 .doesNotHaveBean(ProcessEngine.class)
-                .doesNotHaveBean("dmnProcessEngineConfigurationConfigurer")
-                .doesNotHaveBean("dmnAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.DmnEngineWithoutMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.DmnEngineWithMain.class)
+                .doesNotHaveBean("dmnMainEngineConfigurator");
             DmnEngine dmnEngine = context.getBean(DmnEngine.class);
             assertThat(dmnEngine).as("Dmn engine").isNotNull();
 
@@ -165,8 +167,9 @@ public class DmnEngineAutoConfigurationTest {
                 assertThat(context)
                     .doesNotHaveBean(AppEngine.class)
                     .doesNotHaveBean(ProcessEngine.class)
-                    .doesNotHaveBean("dmnProcessEngineConfigurationConfigurer")
-                    .doesNotHaveBean("dmnAppEngineConfigurationConfigurer");
+                    .hasSingleBean(MainEngineConfiguration.DmnEngineWithoutMain.class)
+                    .doesNotHaveBean(MainEngineConfiguration.DmnEngineWithMain.class)
+                    .doesNotHaveBean("dmnMainEngineConfigurator");
                 DmnEngine dmnEngine = context.getBean(DmnEngine.class);
                 assertThat(dmnEngine).as("Dmn engine").isNotNull();
 
@@ -222,8 +225,9 @@ public class DmnEngineAutoConfigurationTest {
             assertThat(context)
                 .doesNotHaveBean(AppEngine.class)
                 .doesNotHaveBean(ProcessEngine.class)
-                .doesNotHaveBean("dmnProcessEngineConfigurationConfigurer")
-                .doesNotHaveBean("dmnAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.DmnEngineWithoutMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.DmnEngineWithMain.class)
+                .doesNotHaveBean("dmnMainEngineConfigurator");
             DmnEngine dmnEngine = context.getBean(DmnEngine.class);
             assertThat(dmnEngine).as("Dmn engine").isNotNull();
 
@@ -276,8 +280,9 @@ public class DmnEngineAutoConfigurationTest {
         )).run(context -> {
             assertThat(context)
                 .doesNotHaveBean(AppEngine.class)
-                .hasBean("dmnProcessEngineConfigurationConfigurer")
-                .doesNotHaveBean("dmnAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.DmnEngineWithMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.DmnEngineWithoutMain.class)
+                .hasBean("dmnMainEngineConfigurator");
             ProcessEngine processEngine = context.getBean(ProcessEngine.class);
             assertThat(processEngine).as("Process engine").isNotNull();
             DmnEngineConfigurationApi dmnProcessConfigurationApi = dmnEngine(processEngine);
@@ -293,7 +298,7 @@ public class DmnEngineAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringDmnEngineConfiguration.class,
                             SpringProcessEngineConfiguration.class
                         );
@@ -338,8 +343,9 @@ public class DmnEngineAutoConfigurationTest {
             ProcessEngineAutoConfiguration.class
         )).run(context -> {
             assertThat(context)
-                .doesNotHaveBean("dmnProcessEngineConfigurationConfigurer")
-                .hasBean("dmnAppEngineConfigurationConfigurer");
+                    .hasSingleBean(MainEngineConfiguration.DmnEngineWithMain.class)
+                    .doesNotHaveBean(MainEngineConfiguration.DmnEngineWithoutMain.class)
+                    .hasBean("dmnMainEngineConfigurator");
             AppEngine appEngine = context.getBean(AppEngine.class);
             assertThat(appEngine).as("app engine").isNotNull();
             DmnEngineConfigurationApi dmnProcessConfigurationApi = dmnEngine(appEngine);
@@ -352,7 +358,7 @@ public class DmnEngineAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringProcessEngineConfiguration.class,
                             SpringDmnEngineConfiguration.class,
                             SpringAppEngineConfiguration.class

@@ -28,6 +28,7 @@ import org.flowable.common.spring.CommonAutoDeploymentProperties;
 import org.flowable.spring.boot.AbstractSpringEngineAutoConfiguration;
 import org.flowable.spring.boot.FlowableAutoDeploymentProperties;
 import org.flowable.spring.boot.FlowableProperties;
+import org.flowable.spring.boot.MainEngineConfiguration;
 import org.flowable.spring.boot.condition.ConditionalOnAppEngine;
 import org.flowable.spring.boot.eventregistry.FlowableEventRegistryProperties;
 import org.flowable.spring.boot.idm.FlowableIdmProperties;
@@ -36,6 +37,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.io.Resource;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -55,7 +57,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
     FlowableIdmProperties.class,
     FlowableEventRegistryProperties.class,
 })
-public class AppEngineAutoConfiguration extends AbstractSpringEngineAutoConfiguration {
+@Import(MainEngineConfiguration.AppEngineAsMain.class)
+public class AppEngineAutoConfiguration extends AbstractSpringEngineAutoConfiguration<SpringAppEngineConfiguration> {
 
     protected final FlowableAppProperties appProperties;
     protected final FlowableIdmProperties idmProperties;
@@ -110,6 +113,8 @@ public class AppEngineAutoConfiguration extends AbstractSpringEngineAutoConfigur
         // Always add the out of the box auto deployment strategies as last
         deploymentStrategies.add(new DefaultAutoDeploymentStrategy(deploymentProperties));
         conf.setDeploymentStrategies(deploymentStrategies);
+
+        invokeConfigurers(conf);
 
         return conf;
     }

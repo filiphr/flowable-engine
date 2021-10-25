@@ -116,7 +116,7 @@ public class AppEngineAutoConfigurationTest {
                     .getBean(CustomUserEngineConfigurerConfiguration.class)
                     .satisfies(configuration -> {
                         assertThat(configuration.getInvokedConfigurations())
-                            .containsExactly(
+                            .containsExactlyInAnyOrder(
                                 SpringIdmEngineConfiguration.class,
                                 SpringAppEngineConfiguration.class
                             );
@@ -201,7 +201,7 @@ public class AppEngineAutoConfigurationTest {
                     .getBean(CustomUserEngineConfigurerConfiguration.class)
                     .satisfies(configuration -> {
                         assertThat(configuration.getInvokedConfigurations())
-                            .containsExactly(
+                            .containsExactlyInAnyOrder(
                                 SpringIdmEngineConfiguration.class,
                                 SpringAppEngineConfiguration.class
                             );
@@ -238,7 +238,7 @@ public class AppEngineAutoConfigurationTest {
                     .getBean(CustomUserEngineConfigurerConfiguration.class)
                     .satisfies(configuration -> {
                         assertThat(configuration.getInvokedConfigurations())
-                            .containsExactly(
+                            .containsExactlyInAnyOrder(
                                 SpringIdmEngineConfiguration.class,
                                 SpringAppEngineConfiguration.class
                             );
@@ -302,7 +302,7 @@ public class AppEngineAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringProcessEngineConfiguration.class,
                             SpringIdmEngineConfiguration.class,
                             SpringAppEngineConfiguration.class
@@ -362,7 +362,7 @@ public class AppEngineAutoConfigurationTest {
                     .getBean(CustomUserEngineConfigurerConfiguration.class)
                     .satisfies(configuration -> {
                         assertThat(configuration.getInvokedConfigurations())
-                                .containsExactly(
+                                .containsExactlyInAnyOrder(
                                         SpringProcessEngineConfiguration.class,
                                         SpringAppEngineConfiguration.class
                                 );

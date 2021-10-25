@@ -12,23 +12,15 @@
  */
 package org.flowable.spring.boot.eventregistry;
 
-import org.flowable.app.engine.AppEngine;
-import org.flowable.engine.ProcessEngine;
 import org.flowable.eventregistry.api.EventManagementService;
 import org.flowable.eventregistry.api.EventRegistry;
 import org.flowable.eventregistry.api.EventRepositoryService;
 import org.flowable.eventregistry.impl.EventRegistryEngine;
-import org.flowable.eventregistry.impl.EventRegistryEngines;
-import org.flowable.eventregistry.spring.EventRegistryFactoryBean;
-import org.flowable.eventregistry.spring.SpringEventRegistryEngineConfiguration;
-import org.flowable.spring.boot.BaseEngineConfigurationWithConfigurers;
 import org.flowable.spring.boot.FlowableProperties;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.condition.ConditionalOnEventRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -51,75 +43,6 @@ import org.springframework.context.annotation.Configuration;
     ProcessEngineServicesAutoConfiguration.class
 })
 public class EventRegistryServicesAutoConfiguration {
-
-
-    /**
-     * If a process engine is present that means that the EventRegistryEngine was created as part of it.
-     * Therefore extract it from the EventRegistryEngines.
-     */
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnMissingBean(type = {
-        "org.flowable.eventregistry.impl.EventRegistryEngine",
-        "org.flowable.app.engine.AppEngine"
-    })
-    @ConditionalOnBean(type = {
-        "org.flowable.engine.ProcessEngine"
-    })
-    static class AlreadyInitializedEventRegistryConfiguration {
-        @Bean
-        public EventRegistryEngine eventRegistryEngine(@SuppressWarnings("unused") ProcessEngine processEngine) {
-            // The process engine needs to be injected, as otherwise it won't be initialized, which means that the EventRegistryEngine is not initialized yet
-            if (!EventRegistryEngines.isInitialized()) {
-                throw new IllegalStateException("Event registry has not been initialized");
-            }
-            return EventRegistryEngines.getDefaultEventRegistryEngine();
-        }
-    }
-    
-    /**
-     * If an app engine is present that means that the EventRegistryEngine was created as part of the app engine.
-     * Therefore extract it from the EventRegistryEngines.
-     */
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnMissingBean(type = {
-        "org.flowable.eventregistry.impl.EventRegistryEngine"
-    })
-    @ConditionalOnBean(type = {
-        "org.flowable.app.engine.AppEngine"
-    })
-    static class AlreadyInitializedAppEngineConfiguration {
-
-        @Bean
-        public EventRegistryEngine eventRegistryEngine(@SuppressWarnings("unused") AppEngine appEngine) {
-            // The app engine needs to be injected, as otherwise it won't be initialized, which means that the EventRegistryEngine is not initialized yet
-            if (!EventRegistryEngines.isInitialized()) {
-                throw new IllegalStateException("Event registry has not been initialized");
-            }
-            return EventRegistryEngines.getDefaultEventRegistryEngine();
-        }
-    }
-    
-    /**
-     * If there is no process engine configuration, then trigger a creation of the event registry.
-     */
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnMissingBean(type = {
-        "org.flowable.eventregistry.impl.EventRegistryEngine",
-        "org.flowable.engine.ProcessEngine",
-        "org.flowable.app.engine.AppEngine"
-    })
-    static class StandaloneEventRegistryConfiguration extends BaseEngineConfigurationWithConfigurers<SpringEventRegistryEngineConfiguration> {
-
-        @Bean
-        public EventRegistryFactoryBean formEngine(SpringEventRegistryEngineConfiguration eventEngineConfiguration) {
-            EventRegistryFactoryBean factory = new EventRegistryFactoryBean();
-            factory.setEventEngineConfiguration(eventEngineConfiguration);
-            
-            invokeConfigurers(eventEngineConfiguration);
-            
-            return factory;
-        }
-    }
 
     @Bean
     public EventRepositoryService eventRepositoryService(EventRegistryEngine eventRegistryEngine) {

@@ -35,20 +35,30 @@ import org.springframework.util.StringUtils;
  * @author Filip Hrisafov
  * @author Javier Casal
  */
-public abstract class AbstractEngineAutoConfiguration {
+public abstract class AbstractEngineAutoConfiguration<T extends AbstractEngineConfiguration> {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
     protected final FlowableProperties flowableProperties;
     protected ResourcePatternResolver resourcePatternResolver;
+    protected List<EngineConfigurationConfigurer<T>> engineConfigurers = new ArrayList<>();
 
     public AbstractEngineAutoConfiguration(FlowableProperties flowableProperties) {
         this.flowableProperties = flowableProperties;
     }
 
+    protected void invokeConfigurers(T engineConfiguration) {
+        engineConfigurers.forEach(configurer -> configurer.configure(engineConfiguration));
+    }
+
     @Autowired
     public void setResourcePatternResolver(ResourcePatternResolver resourcePatternResolver) {
         this.resourcePatternResolver = resourcePatternResolver;
+    }
+
+    @Autowired(required = false)
+    public void setEngineConfigurers(List<EngineConfigurationConfigurer<T>> engineConfigurers) {
+        this.engineConfigurers = engineConfigurers;
     }
 
     protected void configureEngine(AbstractEngineConfiguration engineConfiguration, DataSource dataSource) {

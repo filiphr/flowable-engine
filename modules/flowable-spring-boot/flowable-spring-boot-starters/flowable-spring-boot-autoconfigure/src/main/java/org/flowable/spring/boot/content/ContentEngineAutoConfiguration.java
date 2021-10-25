@@ -14,28 +14,22 @@ package org.flowable.spring.boot.content;
 
 import javax.sql.DataSource;
 
-import org.flowable.app.spring.SpringAppEngineConfiguration;
-import org.flowable.content.engine.configurator.ContentEngineConfigurator;
 import org.flowable.content.spring.SpringContentEngineConfiguration;
-import org.flowable.content.spring.configurator.SpringContentEngineConfigurator;
-import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.flowable.spring.boot.AbstractEngineAutoConfiguration;
-import org.flowable.spring.boot.BaseEngineConfigurationWithConfigurers;
-import org.flowable.spring.boot.EngineConfigurationConfigurer;
 import org.flowable.spring.boot.FlowableProperties;
+import org.flowable.spring.boot.MainEngineConfiguration;
 import org.flowable.spring.boot.ProcessEngineAutoConfiguration;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineServicesAutoConfiguration;
-import org.flowable.spring.boot.condition.ConditionalOnAppEngine;
 import org.flowable.spring.boot.condition.ConditionalOnContentEngine;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
@@ -57,7 +51,12 @@ import org.springframework.transaction.PlatformTransactionManager;
     AppEngineServicesAutoConfiguration.class,
     ProcessEngineServicesAutoConfiguration.class,
 })
-public class ContentEngineAutoConfiguration extends AbstractEngineAutoConfiguration {
+// The order of the imports is important since they will be scanned by Spring in that order
+@Import({
+        MainEngineConfiguration.ContentEngineWithMain.class,
+        MainEngineConfiguration.ContentEngineWithoutMain.class,
+})
+public class ContentEngineAutoConfiguration extends AbstractEngineAutoConfiguration<SpringContentEngineConfiguration> {
 
     protected final FlowableContentProperties contentProperties;
 
@@ -78,61 +77,8 @@ public class ContentEngineAutoConfiguration extends AbstractEngineAutoConfigurat
         configuration.setContentRootFolder(storage.getRootFolder());
         configuration.setCreateContentRootFolder(storage.getCreateRoot());
 
+        invokeConfigurers(configuration);
+
         return configuration;
-    }
-
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnBean(type = {
-        "org.flowable.spring.SpringProcessEngineConfiguration"
-    })
-    @ConditionalOnMissingBean(type = {
-        "org.flowable.app.spring.SpringAppEngineConfiguration"
-    })
-    public static class ContentEngineProcessConfiguration extends BaseEngineConfigurationWithConfigurers<SpringContentEngineConfiguration> {
-        
-        @Bean
-        @ConditionalOnMissingBean(name = "contentProcessEngineConfigurationConfigurer")
-        public EngineConfigurationConfigurer<SpringProcessEngineConfiguration> contentProcessEngineConfigurationConfigurer(
-            ContentEngineConfigurator contentEngineConfigurator) {
-            return processEngineConfiguration -> processEngineConfiguration.addConfigurator(contentEngineConfigurator);
-        }
-
-        @Bean
-        @ConditionalOnMissingBean
-        public ContentEngineConfigurator contentEngineConfigurator(SpringContentEngineConfiguration configuration) {
-            SpringContentEngineConfigurator contentEngineConfigurator = new SpringContentEngineConfigurator();
-            contentEngineConfigurator.setContentEngineConfiguration(configuration);
-            
-            invokeConfigurers(configuration);
-            
-            return contentEngineConfigurator;
-        }
-    }
-    
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnAppEngine
-    @ConditionalOnBean(type = {
-        "org.flowable.app.spring.SpringAppEngineConfiguration"
-    })
-    public static class ContentEngineAppConfiguration extends BaseEngineConfigurationWithConfigurers<SpringContentEngineConfiguration> {
-        
-        @Bean
-        @ConditionalOnMissingBean(name = "contentAppEngineConfigurationConfigurer")
-        public EngineConfigurationConfigurer<SpringAppEngineConfiguration> contentAppEngineConfigurationConfigurer(
-                        ContentEngineConfigurator contentEngineConfigurator) {
-            
-            return appEngineConfiguration -> appEngineConfiguration.addConfigurator(contentEngineConfigurator);
-        }
-
-        @Bean
-        @ConditionalOnMissingBean
-        public ContentEngineConfigurator contentEngineConfigurator(SpringContentEngineConfiguration configuration) {
-            SpringContentEngineConfigurator contentEngineConfigurator = new SpringContentEngineConfigurator();
-            contentEngineConfigurator.setContentEngineConfiguration(configuration);
-            
-            invokeConfigurers(configuration);
-            
-            return contentEngineConfigurator;
-        }
     }
 }

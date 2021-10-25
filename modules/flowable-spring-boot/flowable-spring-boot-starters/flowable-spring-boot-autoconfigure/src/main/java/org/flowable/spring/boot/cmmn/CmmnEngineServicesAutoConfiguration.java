@@ -12,7 +12,6 @@
  */
 package org.flowable.spring.boot.cmmn;
 
-import org.flowable.app.engine.AppEngine;
 import org.flowable.cmmn.api.CmmnHistoryService;
 import org.flowable.cmmn.api.CmmnManagementService;
 import org.flowable.cmmn.api.CmmnMigrationService;
@@ -21,18 +20,11 @@ import org.flowable.cmmn.api.CmmnRuntimeService;
 import org.flowable.cmmn.api.CmmnTaskService;
 import org.flowable.cmmn.api.DynamicCmmnService;
 import org.flowable.cmmn.engine.CmmnEngine;
-import org.flowable.cmmn.engine.CmmnEngines;
-import org.flowable.cmmn.spring.CmmnEngineFactoryBean;
-import org.flowable.cmmn.spring.SpringCmmnEngineConfiguration;
-import org.flowable.engine.ProcessEngine;
-import org.flowable.spring.boot.BaseEngineConfigurationWithConfigurers;
 import org.flowable.spring.boot.FlowableProperties;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.condition.ConditionalOnCmmnEngine;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -54,75 +46,6 @@ import org.springframework.context.annotation.Configuration;
     ProcessEngineServicesAutoConfiguration.class
 })
 public class CmmnEngineServicesAutoConfiguration {
-
-    /**
-     * If a process engine is present and no app engine that means that the CmmnEngine was created as part of the process engine.
-     * Therefore extract it from the CmmnEngines.
-     */
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnMissingBean(type = {
-        "org.flowable.cmmn.engine.CmmnEngine",
-        "org.flowable.app.engine.AppEngine"
-    })
-    @ConditionalOnBean(type = {
-        "org.flowable.engine.ProcessEngine"
-    })
-    static class AlreadyInitializedEngineConfiguration {
-
-        @Bean
-        public CmmnEngine cmmnEngine(@SuppressWarnings("unused") ProcessEngine processEngine) {
-            // The process engine needs to be injected, as otherwise it won't be initialized, which means that the CmmnEngine is not initialized yet
-            if (!CmmnEngines.isInitialized()) {
-                throw new IllegalStateException("CMMN engine has not been initialized");
-            }
-            return CmmnEngines.getDefaultCmmnEngine();
-        }
-    }
-    
-    /**
-     * If an app engine is present that means that the CmmnEngine was created as part of the app engine.
-     * Therefore extract it from the CmmnEngines.
-     */
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnMissingBean(type = {
-        "org.flowable.cmmn.engine.CmmnEngine"
-    })
-    @ConditionalOnBean(type = {
-        "org.flowable.app.engine.AppEngine"
-    })
-    static class AlreadyInitializedAppEngineConfiguration {
-
-        @Bean
-        public CmmnEngine cmmnEngine(@SuppressWarnings("unused") AppEngine appEngine) {
-            // The app engine needs to be injected, as otherwise it won't be initialized, which means that the CmmnEngine is not initialized yet
-            if (!CmmnEngines.isInitialized()) {
-                throw new IllegalStateException("CMMN engine has not been initialized");
-            }
-            return CmmnEngines.getDefaultCmmnEngine();
-        }
-    }
-
-    /**
-     * If there is no process engine configuration, then trigger a creation of the cmmn engine.
-     */
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnMissingBean(type = {
-        "org.flowable.cmmn.engine.CmmnEngine",
-        "org.flowable.engine.ProcessEngine",
-        "org.flowable.app.engine.AppEngine",
-    })
-    static class StandaloneEngineConfiguration extends BaseEngineConfigurationWithConfigurers<SpringCmmnEngineConfiguration> {
-
-        @Bean
-        public CmmnEngineFactoryBean cmmnEngine(SpringCmmnEngineConfiguration cmmnEngineConfiguration) {
-            CmmnEngineFactoryBean factory = new CmmnEngineFactoryBean();
-            factory.setCmmnEngineConfiguration(cmmnEngineConfiguration);
-            
-            invokeConfigurers(cmmnEngineConfiguration);
-            
-            return factory;
-        }
-    }
 
     @Bean
     public CmmnRuntimeService cmmnRuntimeService(CmmnEngine cmmnEngine) {

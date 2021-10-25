@@ -18,23 +18,18 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.flowable.app.spring.SpringAppEngineConfiguration;
 import org.flowable.common.engine.api.scope.ScopeTypes;
 import org.flowable.common.spring.AutoDeploymentStrategy;
 import org.flowable.common.spring.CommonAutoDeploymentProperties;
 import org.flowable.form.engine.FormEngine;
-import org.flowable.form.engine.configurator.FormEngineConfigurator;
 import org.flowable.form.spring.SpringFormEngineConfiguration;
 import org.flowable.form.spring.autodeployment.DefaultAutoDeploymentStrategy;
 import org.flowable.form.spring.autodeployment.ResourceParentFolderAutoDeploymentStrategy;
 import org.flowable.form.spring.autodeployment.SingleResourceAutoDeploymentStrategy;
-import org.flowable.form.spring.configurator.SpringFormEngineConfigurator;
-import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.flowable.spring.boot.AbstractSpringEngineAutoConfiguration;
-import org.flowable.spring.boot.BaseEngineConfigurationWithConfigurers;
-import org.flowable.spring.boot.EngineConfigurationConfigurer;
 import org.flowable.spring.boot.FlowableAutoDeploymentProperties;
 import org.flowable.spring.boot.FlowableProperties;
+import org.flowable.spring.boot.MainEngineConfiguration;
 import org.flowable.spring.boot.ProcessEngineAutoConfiguration;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineAutoConfiguration;
@@ -43,11 +38,11 @@ import org.flowable.spring.boot.condition.ConditionalOnFormEngine;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.io.Resource;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -74,7 +69,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
     AppEngineServicesAutoConfiguration.class,
     ProcessEngineServicesAutoConfiguration.class,
 })
-public class FormEngineAutoConfiguration extends AbstractSpringEngineAutoConfiguration {
+// The order of the imports is important since they will be scanned by Spring in that order
+@Import({
+        MainEngineConfiguration.FormEngineWithMain.class,
+        MainEngineConfiguration.FormEngineWithoutMain.class,
+})
+public class FormEngineAutoConfiguration extends AbstractSpringEngineAutoConfiguration<SpringFormEngineConfiguration> {
 
     protected final FlowableFormProperties formProperties;
     protected final FlowableAutoDeploymentProperties autoDeploymentProperties;
@@ -128,61 +128,10 @@ public class FormEngineAutoConfiguration extends AbstractSpringEngineAutoConfigu
         deploymentStrategies.add(new ResourceParentFolderAutoDeploymentStrategy(deploymentProperties));
         configuration.setDeploymentStrategies(deploymentStrategies);
 
+        invokeConfigurers(configuration);
+
         return configuration;
     }
 
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnBean(type = {
-        "org.flowable.spring.SpringProcessEngineConfiguration"
-    })
-    @ConditionalOnMissingBean(type = {
-        "org.flowable.app.spring.SpringAppEngineConfiguration"
-    })
-    public static class FormEngineProcessConfiguration extends BaseEngineConfigurationWithConfigurers<SpringFormEngineConfiguration> {
-
-        @Bean
-        @ConditionalOnMissingBean(name = "formProcessEngineConfigurationConfigurer")
-        public EngineConfigurationConfigurer<SpringProcessEngineConfiguration> formProcessEngineConfigurationConfigurer(
-            FormEngineConfigurator formEngineConfigurator) {
-            
-            return processEngineConfiguration -> processEngineConfiguration.addConfigurator(formEngineConfigurator);
-        }
-
-        @Bean
-        @ConditionalOnMissingBean
-        public FormEngineConfigurator formEngineConfigurator(SpringFormEngineConfiguration configuration) {
-            SpringFormEngineConfigurator formEngineConfigurator = new SpringFormEngineConfigurator();
-            formEngineConfigurator.setFormEngineConfiguration(configuration);
-            invokeConfigurers(configuration);
-            
-            return formEngineConfigurator;
-        }
-    }
-    
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnBean(type = {
-        "org.flowable.app.spring.SpringAppEngineConfiguration"
-    })
-    public static class FormEngineAppEngineConfiguration extends BaseEngineConfigurationWithConfigurers<SpringFormEngineConfiguration> {
-
-        @Bean
-        @ConditionalOnMissingBean(name = "formAppEngineConfigurationConfigurer")
-        public EngineConfigurationConfigurer<SpringAppEngineConfiguration> formAppEngineConfigurationConfigurer(
-            FormEngineConfigurator formEngineConfigurator) {
-            
-            return appEngineConfiguration -> appEngineConfiguration.addConfigurator(formEngineConfigurator);
-        }
-
-        @Bean
-        @ConditionalOnMissingBean
-        public FormEngineConfigurator formEngineConfigurator(SpringFormEngineConfiguration configuration) {
-            SpringFormEngineConfigurator formEngineConfigurator = new SpringFormEngineConfigurator();
-            formEngineConfigurator.setFormEngineConfiguration(configuration);
-
-            invokeConfigurers(configuration);
-            
-            return formEngineConfigurator;
-        }
-    }
 }
 

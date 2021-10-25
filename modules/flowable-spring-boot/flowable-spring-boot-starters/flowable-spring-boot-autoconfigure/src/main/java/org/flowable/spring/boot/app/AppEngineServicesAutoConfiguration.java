@@ -15,9 +15,6 @@ package org.flowable.spring.boot.app;
 import org.flowable.app.api.AppManagementService;
 import org.flowable.app.api.AppRepositoryService;
 import org.flowable.app.engine.AppEngine;
-import org.flowable.app.spring.AppEngineFactoryBean;
-import org.flowable.app.spring.SpringAppEngineConfiguration;
-import org.flowable.spring.boot.BaseEngineConfigurationWithConfigurers;
 import org.flowable.spring.boot.FlowableProperties;
 import org.flowable.spring.boot.condition.ConditionalOnAppEngine;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -40,17 +37,7 @@ import org.springframework.context.annotation.Configuration;
 @AutoConfigureAfter({
     AppEngineAutoConfiguration.class
 })
-public class AppEngineServicesAutoConfiguration extends BaseEngineConfigurationWithConfigurers<SpringAppEngineConfiguration> {
-
-    @Bean(name="flowableAppEngine")
-    public AppEngineFactoryBean appEngine(SpringAppEngineConfiguration configuration) throws Exception {
-        AppEngineFactoryBean appEngineFactoryBean = new AppEngineFactoryBean();
-        appEngineFactoryBean.setAppEngineConfiguration(configuration);
-        
-        invokeConfigurers(configuration);
-        
-        return appEngineFactoryBean;
-    }
+public class AppEngineServicesAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean

@@ -18,7 +18,6 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.flowable.app.spring.SpringAppEngineConfiguration;
 import org.flowable.common.engine.api.scope.ScopeTypes;
 import org.flowable.common.engine.impl.cfg.IdGenerator;
 import org.flowable.common.engine.impl.persistence.StrongUuidGenerator;
@@ -26,8 +25,6 @@ import org.flowable.common.spring.AutoDeploymentStrategy;
 import org.flowable.common.spring.CommonAutoDeploymentProperties;
 import org.flowable.common.spring.async.SpringAsyncTaskExecutor;
 import org.flowable.engine.ProcessEngine;
-import org.flowable.engine.configurator.ProcessEngineConfigurator;
-import org.flowable.engine.spring.configurator.SpringProcessEngineConfigurator;
 import org.flowable.http.common.api.client.FlowableHttpClient;
 import org.flowable.job.service.impl.asyncexecutor.AsyncExecutor;
 import org.flowable.job.service.impl.asyncexecutor.AsyncJobExecutorConfiguration;
@@ -52,7 +49,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -92,13 +88,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 }, name = {
     "org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration"
 })
-@AutoConfigureBefore({
-    AppEngineServicesAutoConfiguration.class,
-})
+// The order of the imports is important since they will be scanned by Spring in that order
 @Import({
+    MainEngineConfiguration.ProcessEngineWithMain.class,
+    MainEngineConfiguration.ProcessEngineWithoutMain.class,
     FlowableJobConfiguration.class
 })
-public class ProcessEngineAutoConfiguration extends AbstractSpringEngineAutoConfiguration {
+public class ProcessEngineAutoConfiguration extends AbstractSpringEngineAutoConfiguration<SpringProcessEngineConfiguration> {
 
     protected final FlowableProcessProperties processProperties;
     protected final FlowableAppProperties appProperties;
@@ -291,33 +287,8 @@ public class ProcessEngineAutoConfiguration extends AbstractSpringEngineAutoConf
         deploymentStrategies.add(new ResourceParentFolderAutoDeploymentStrategy(deploymentProperties));
         conf.setDeploymentStrategies(deploymentStrategies);
 
+        invokeConfigurers(conf);
+
         return conf;
-    }
-    
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnBean(type = {
-        "org.flowable.app.spring.SpringAppEngineConfiguration"
-    })
-    public static class ProcessEngineAppConfiguration extends BaseEngineConfigurationWithConfigurers<SpringProcessEngineConfiguration> {
-
-        @Bean
-        @ConditionalOnMissingBean(name = "processAppEngineConfigurationConfigurer")
-        public EngineConfigurationConfigurer<SpringAppEngineConfiguration> processAppEngineConfigurationConfigurer(ProcessEngineConfigurator processEngineConfigurator) {
-            return appEngineConfiguration -> appEngineConfiguration.addConfigurator(processEngineConfigurator);
-        }
-
-        @Bean
-        @ConditionalOnMissingBean
-        public ProcessEngineConfigurator processEngineConfigurator(SpringProcessEngineConfiguration processEngineConfiguration) {
-            SpringProcessEngineConfigurator processEngineConfigurator = new SpringProcessEngineConfigurator();
-            processEngineConfigurator.setProcessEngineConfiguration(processEngineConfiguration);
-            
-            processEngineConfiguration.setDisableIdmEngine(true);
-            processEngineConfiguration.setDisableEventRegistry(true);
-            
-            invokeConfigurers(processEngineConfiguration);
-            
-            return processEngineConfigurator;
-        }
     }
 }

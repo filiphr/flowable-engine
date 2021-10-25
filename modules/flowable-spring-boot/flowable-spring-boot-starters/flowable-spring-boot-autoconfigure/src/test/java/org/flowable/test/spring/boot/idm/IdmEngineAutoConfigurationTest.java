@@ -34,6 +34,7 @@ import org.flowable.idm.engine.IdmEngine;
 import org.flowable.idm.spring.SpringIdmEngineConfiguration;
 import org.flowable.idm.spring.authentication.SpringEncoder;
 import org.flowable.spring.SpringProcessEngineConfiguration;
+import org.flowable.spring.boot.MainEngineConfiguration;
 import org.flowable.spring.boot.ProcessEngineAutoConfiguration;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineAutoConfiguration;
@@ -72,8 +73,9 @@ public class IdmEngineAutoConfigurationTest {
             assertThat(context)
                 .doesNotHaveBean(AppEngine.class)
                 .doesNotHaveBean(ProcessEngine.class)
-                .doesNotHaveBean("idmProcessEngineConfigurationConfigurer")
-                .doesNotHaveBean("idmAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.IdmEngineWithoutMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.IdmEngineWithMain.class)
+                .doesNotHaveBean("idmMainEngineConfigurator");
             IdmEngine idmEngine = context.getBean(IdmEngine.class);
             assertThat(idmEngine).as("Idm engine").isNotNull();
             assertAllServicesPresent(context, idmEngine);
@@ -83,7 +85,7 @@ public class IdmEngineAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringIdmEngineConfiguration.class
                         );
                 });
@@ -216,8 +218,9 @@ public class IdmEngineAutoConfigurationTest {
         )).run(context -> {
             assertThat(context)
                 .doesNotHaveBean(AppEngine.class)
-                .hasBean("idmProcessEngineConfigurationConfigurer")
-                .doesNotHaveBean("idmAppEngineConfigurationConfigurer");
+                .hasSingleBean(MainEngineConfiguration.IdmEngineWithMain.class)
+                .doesNotHaveBean(MainEngineConfiguration.IdmEngineWithoutMain.class)
+                .hasBean("idmMainEngineConfigurator");
             ProcessEngine processEngine = context.getBean(ProcessEngine.class);
             assertThat(processEngine).as("Process engine").isNotNull();
             IdmEngineConfigurationApi idmProcessConfiguration = idmEngine(processEngine);
@@ -233,7 +236,7 @@ public class IdmEngineAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringIdmEngineConfiguration.class,
                             SpringProcessEngineConfiguration.class
                         );
@@ -253,8 +256,9 @@ public class IdmEngineAutoConfigurationTest {
             ProcessEngineAutoConfiguration.class
         )).run(context -> {
             assertThat(context)
-                .doesNotHaveBean("idmProcessEngineConfigurationConfigurer")
-                .hasBean("idmAppEngineConfigurationConfigurer");
+                    .hasSingleBean(MainEngineConfiguration.IdmEngineWithMain.class)
+                    .doesNotHaveBean(MainEngineConfiguration.IdmEngineWithoutMain.class)
+                    .hasBean("idmMainEngineConfigurator");
             AppEngine appEngine = context.getBean(AppEngine.class);
             assertThat(appEngine).as("App engine").isNotNull();
             IdmEngineConfigurationApi idmProcessConfiguration = idmEngine(appEngine);
@@ -270,7 +274,7 @@ public class IdmEngineAutoConfigurationTest {
                 .getBean(CustomUserEngineConfigurerConfiguration.class)
                 .satisfies(configuration -> {
                     assertThat(configuration.getInvokedConfigurations())
-                        .containsExactly(
+                        .containsExactlyInAnyOrder(
                             SpringProcessEngineConfiguration.class,
                             SpringIdmEngineConfiguration.class,
                             SpringAppEngineConfiguration.class

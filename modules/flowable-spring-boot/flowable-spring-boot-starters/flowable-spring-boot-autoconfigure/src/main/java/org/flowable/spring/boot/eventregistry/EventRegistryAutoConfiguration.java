@@ -18,29 +18,24 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.flowable.app.spring.SpringAppEngineConfiguration;
 import org.flowable.common.engine.api.scope.ScopeTypes;
 import org.flowable.common.spring.AutoDeploymentStrategy;
 import org.flowable.common.spring.CommonAutoDeploymentProperties;
 import org.flowable.eventregistry.api.ChannelModelProcessor;
 import org.flowable.eventregistry.api.management.EventRegistryChangeDetectionExecutor;
 import org.flowable.eventregistry.impl.EventRegistryEngine;
-import org.flowable.eventregistry.impl.configurator.EventRegistryEngineConfigurator;
 import org.flowable.eventregistry.spring.SpringEventRegistryEngineConfiguration;
 import org.flowable.eventregistry.spring.autodeployment.DefaultAutoDeploymentStrategy;
 import org.flowable.eventregistry.spring.autodeployment.ResourceParentFolderAutoDeploymentStrategy;
 import org.flowable.eventregistry.spring.autodeployment.SingleResourceAutoDeploymentStrategy;
-import org.flowable.eventregistry.spring.configurator.SpringEventRegistryConfigurator;
 import org.flowable.eventregistry.spring.jms.JmsChannelModelProcessor;
 import org.flowable.eventregistry.spring.kafka.KafkaChannelDefinitionProcessor;
 import org.flowable.eventregistry.spring.management.DefaultSpringEventRegistryChangeDetectionExecutor;
 import org.flowable.eventregistry.spring.rabbit.RabbitChannelDefinitionProcessor;
-import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.flowable.spring.boot.AbstractSpringEngineAutoConfiguration;
-import org.flowable.spring.boot.BaseEngineConfigurationWithConfigurers;
-import org.flowable.spring.boot.EngineConfigurationConfigurer;
 import org.flowable.spring.boot.FlowableAutoDeploymentProperties;
 import org.flowable.spring.boot.FlowableProperties;
+import org.flowable.spring.boot.MainEngineConfiguration;
 import org.flowable.spring.boot.ProcessEngineAutoConfiguration;
 import org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration;
 import org.flowable.spring.boot.app.AppEngineAutoConfiguration;
@@ -60,6 +55,7 @@ import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.io.Resource;
 import org.springframework.jms.config.JmsListenerEndpointRegistry;
 import org.springframework.jms.core.JmsOperations;
@@ -91,7 +87,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
     AppEngineServicesAutoConfiguration.class,
     ProcessEngineServicesAutoConfiguration.class,
 })
-public class EventRegistryAutoConfiguration extends AbstractSpringEngineAutoConfiguration {
+// The order of the imports is important since they will be scanned by Spring in that order
+@Import({
+        MainEngineConfiguration.EventRegistryEngineWithMain.class,
+        MainEngineConfiguration.EventRegistryEngineWithoutMain.class,
+})
+public class EventRegistryAutoConfiguration extends AbstractSpringEngineAutoConfiguration<SpringEventRegistryEngineConfiguration> {
 
     protected final FlowableEventRegistryProperties eventProperties;
     protected final FlowableAutoDeploymentProperties autoDeploymentProperties;
@@ -163,6 +164,8 @@ public class EventRegistryAutoConfiguration extends AbstractSpringEngineAutoConf
             configuration.setEventRegistryChangeDetectionExecutor(changeDetectionExecutor);
         }
 
+        invokeConfigurers(configuration);
+
         return configuration;
     }
 
@@ -172,60 +175,6 @@ public class EventRegistryAutoConfiguration extends AbstractSpringEngineAutoConf
     public EventRegistryChangeDetectionExecutor eventRegistryChangeDetectionExecutor(ObjectProvider<TaskScheduler> taskScheduler) {
         return new DefaultSpringEventRegistryChangeDetectionExecutor(eventProperties.getChangeDetectionInitialDelay().toMillis(),
             eventProperties.getChangeDetectionDelay().toMillis(), taskScheduler.getIfAvailable());
-    }
-
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnBean(type = {
-        "org.flowable.spring.SpringProcessEngineConfiguration"
-    })
-    @ConditionalOnMissingBean(type = {
-        "org.flowable.app.spring.SpringAppEngineConfiguration"
-    })
-    public static class EventRegistryProcessConfiguration extends BaseEngineConfigurationWithConfigurers<SpringEventRegistryEngineConfiguration> {
-
-        @Bean
-        @ConditionalOnMissingBean(name = "eventProcessEngineConfigurationConfigurer")
-        public EngineConfigurationConfigurer<SpringProcessEngineConfiguration> eventProcessEngineConfigurationConfigurer(
-                        EventRegistryEngineConfigurator eventRegistryEngineConfigurator) {
-            
-            return processEngineConfiguration -> processEngineConfiguration.setEventRegistryConfigurator(eventRegistryEngineConfigurator);
-        }
-
-        @Bean
-        @ConditionalOnMissingBean
-        public EventRegistryEngineConfigurator eventEngineConfigurator(SpringEventRegistryEngineConfiguration configuration) {
-            SpringEventRegistryConfigurator eventEngineConfigurator = new SpringEventRegistryConfigurator();
-            eventEngineConfigurator.setEventEngineConfiguration(configuration);
-            invokeConfigurers(configuration);
-            
-            return eventEngineConfigurator;
-        }
-    }
-    
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnBean(type = {
-        "org.flowable.app.spring.SpringAppEngineConfiguration"
-    })
-    public static class EventRegistryAppEngineConfiguration extends BaseEngineConfigurationWithConfigurers<SpringEventRegistryEngineConfiguration> {
-
-        @Bean
-        @ConditionalOnMissingBean(name = "eventAppEngineConfigurationConfigurer")
-        public EngineConfigurationConfigurer<SpringAppEngineConfiguration> eventAppEngineConfigurationConfigurer(
-                        EventRegistryEngineConfigurator eventRegistryEngineConfigurator) {
-            
-            return appEngineConfiguration -> appEngineConfiguration.setEventRegistryConfigurator(eventRegistryEngineConfigurator);
-        }
-
-        @Bean
-        @ConditionalOnMissingBean
-        public EventRegistryEngineConfigurator eventEngineConfigurator(SpringEventRegistryEngineConfiguration configuration) {
-            SpringEventRegistryConfigurator eventEngineConfigurator = new SpringEventRegistryConfigurator();
-            eventEngineConfigurator.setEventEngineConfiguration(configuration);
-
-            invokeConfigurers(configuration);
-            
-            return eventEngineConfigurator;
-        }
     }
 
     @Configuration(proxyBeanMethods = false)
