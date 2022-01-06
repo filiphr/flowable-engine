@@ -148,6 +148,11 @@ public interface OutboundChannelModelBuilder {
          */
         OutboundChannelModelBuilder eventProcessingPipeline(String delegateExpression);
 
+        /**
+         * A delegate expression to determine the {@link org.flowable.eventregistry.api.OutboundEventChannelAdapterListener} for the channel adapter.
+         */
+        OutboundEventProcessingPipelineBuilder channelAdapterListener(String delegateExpression);
+
     }
 
 }

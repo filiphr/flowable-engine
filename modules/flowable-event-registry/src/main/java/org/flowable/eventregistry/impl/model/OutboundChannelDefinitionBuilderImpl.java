@@ -12,10 +12,14 @@
  */
 package org.flowable.eventregistry.impl.model;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import org.flowable.eventregistry.api.EventDeployment;
 import org.flowable.eventregistry.api.EventRepositoryService;
 import org.flowable.eventregistry.api.model.OutboundChannelModelBuilder;
 import org.flowable.eventregistry.json.converter.ChannelJsonConverter;
+import org.flowable.eventregistry.model.ChannelListener;
 import org.flowable.eventregistry.model.ChannelModel;
 import org.flowable.eventregistry.model.DelegateExpressionOutboundChannelModel;
 import org.flowable.eventregistry.model.JmsOutboundChannelModel;
@@ -260,6 +264,19 @@ public class OutboundChannelDefinitionBuilderImpl implements OutboundChannelMode
             return outboundChannelDefinitionBuilder;
         }
 
+        @Override
+        public OutboundEventProcessingPipelineBuilder channelAdapterListener(String delegateExpression) {
+            Collection<ChannelListener> listeners = this.outboundChannel.getAdapterListeners();
+            if (listeners == null) {
+                listeners = new ArrayList<>();
+                this.outboundChannel.setAdapterListeners(listeners);
+            }
+            ChannelListener listener = new ChannelListener();
+            listener.setType("expression");
+            listener.setImplementation(delegateExpression);
+            listeners.add(listener);
+            return this;
+        }
     }
 
 }

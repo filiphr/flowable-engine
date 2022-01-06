@@ -1,0 +1,15 @@
+{
+    "key": "outboundCustomer",
+    "category": "channel",
+    "name": "Test channel",
+    "channelType": "outbound",
+    "type": "rabbit",
+    "routingKey": "outbound-customer-listener",
+    "serializerType": "json",
+    "adapterListeners": [
+        {
+            "type": "expression",
+            "implementation": "${customAdapterListener}"
+        }
+    ]
+}

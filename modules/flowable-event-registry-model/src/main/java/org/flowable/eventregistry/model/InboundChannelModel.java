@@ -12,6 +12,8 @@
  */
 package org.flowable.eventregistry.model;
 
+import java.util.Collection;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -27,6 +29,8 @@ public class InboundChannelModel extends ChannelModel {
     protected String pipelineDelegateExpression;
     protected ChannelEventKeyDetection channelEventKeyDetection;
     protected ChannelEventTenantIdDetection channelEventTenantIdDetection;
+
+    protected Collection<ChannelListener> pipelineListeners;
 
     @JsonIgnore
     protected Object inboundEventChannelAdapter;
@@ -110,4 +114,11 @@ public class InboundChannelModel extends ChannelModel {
         this.inboundEventChannelAdapter = inboundEventChannelAdapter;
     }
 
+    public Collection<ChannelListener> getPipelineListeners() {
+        return pipelineListeners;
+    }
+
+    public void setPipelineListeners(Collection<ChannelListener> pipelineListeners) {
+        this.pipelineListeners = pipelineListeners;
+    }
 }

@@ -12,6 +12,8 @@
  */
 package org.flowable.eventregistry.impl.pipeline;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 
 import org.apache.commons.lang3.StringUtils;
@@ -20,11 +22,14 @@ import org.flowable.common.engine.impl.el.VariableContainerWrapper;
 import org.flowable.eventregistry.api.ChannelModelProcessor;
 import org.flowable.eventregistry.api.EventRegistry;
 import org.flowable.eventregistry.api.EventRepositoryService;
+import org.flowable.eventregistry.api.OutboundEventChannelAdapter;
+import org.flowable.eventregistry.api.OutboundEventChannelAdapterListener;
 import org.flowable.eventregistry.api.OutboundEventProcessingPipeline;
 import org.flowable.eventregistry.api.OutboundEventSerializer;
 import org.flowable.eventregistry.impl.serialization.EventPayloadToJsonStringSerializer;
 import org.flowable.eventregistry.impl.serialization.EventPayloadToXmlStringSerializer;
 import org.flowable.eventregistry.impl.util.CommandContextUtil;
+import org.flowable.eventregistry.model.ChannelListener;
 import org.flowable.eventregistry.model.ChannelModel;
 import org.flowable.eventregistry.model.OutboundChannelModel;
 
@@ -43,12 +48,12 @@ public class OutboundChannelModelProcessor implements ChannelModelProcessor {
                     EventRepositoryService eventRepositoryService, boolean fallbackToDefaultTenant) {
         
         if (channelModel instanceof OutboundChannelModel) {
-            registerChannelModel((OutboundChannelModel) channelModel);
+            registerChannelModel((OutboundChannelModel) channelModel, tenantId);
         }
 
     }
 
-    protected void registerChannelModel(OutboundChannelModel inboundChannelModel) {
+    protected void registerChannelModel(OutboundChannelModel inboundChannelModel, String tenantId) {
         if (inboundChannelModel.getOutboundEventProcessingPipeline() == null) {
 
             OutboundEventProcessingPipeline eventProcessingPipeline;
@@ -82,6 +87,32 @@ public class OutboundChannelModelProcessor implements ChannelModelProcessor {
             }
 
         }
+
+        Object outboundEventChannelAdapter = inboundChannelModel.getOutboundEventChannelAdapter();
+        if (outboundEventChannelAdapter instanceof OutboundEventChannelAdapter) {
+            OutboundEventChannelAdapter<?> adapter = (OutboundEventChannelAdapter<?>) outboundEventChannelAdapter;
+            inboundChannelModel.setOutboundEventChannelAdapter(postProcessOutboundEventChannelAdapter(inboundChannelModel, tenantId, adapter));
+        }
+    }
+
+    protected OutboundEventChannelAdapter<?> postProcessOutboundEventChannelAdapter(OutboundChannelModel channelModel, String tenantId,
+            OutboundEventChannelAdapter<?> channelAdapter) {
+        Collection<ChannelListener> listeners = channelModel.getAdapterListeners();
+        if (listeners == null || listeners.isEmpty()) {
+            return channelAdapter;
+        }
+
+        Collection<OutboundEventChannelAdapterListener> adapterListeners = new ArrayList<>(listeners.size());
+        for (ChannelListener listener : listeners) {
+            if ("expression".equals(listener.getType())) {
+                adapterListeners.add(resolveExpression(listener.getImplementation(), OutboundEventChannelAdapterListener.class));
+            } else {
+                throw new FlowableException(
+                        "Channel Adapter Listener type " + listener.getType() + " for channel model with key " + channelModel.getKey() + " is not supported");
+            }
+        }
+
+        return new ListenerInvokingOutboundChannelAdapter<>(channelAdapter, channelModel, tenantId, adapterListeners);
     }
 
     protected <T> T resolveExpression(String expression, Class<T> type) {

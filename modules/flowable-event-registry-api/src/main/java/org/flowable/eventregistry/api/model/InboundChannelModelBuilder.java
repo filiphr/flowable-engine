@@ -13,6 +13,7 @@
 package org.flowable.eventregistry.api.model;
 
 import org.flowable.eventregistry.api.EventDeployment;
+import org.flowable.eventregistry.api.InboundChannelPipelineListener;
 import org.flowable.eventregistry.api.InboundEventChannelAdapter;
 import org.flowable.eventregistry.api.InboundEventKeyDetector;
 import org.flowable.eventregistry.api.InboundEventPayloadExtractor;
@@ -218,6 +219,11 @@ public interface InboundChannelModelBuilder {
          * Uses a delegate expression to deserialize the event.
          */
         InboundEventKeyDetectorBuilder delegateExpressionDeserializer(String delegateExpression);
+
+        /**
+         * A delegate expression to determine the {@link InboundChannelPipelineListener} for the event processing pipeline.
+         */
+        InboundEventProcessingPipelineBuilder eventProcessingPipelineListener(String delegateExpression);
 
         /**
          * Uses a delegate expression to determine the custom {@link InboundEventProcessingPipeline} instance.

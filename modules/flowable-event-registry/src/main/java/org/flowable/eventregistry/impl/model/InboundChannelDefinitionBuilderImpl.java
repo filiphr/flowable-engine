@@ -12,6 +12,8 @@
  */
 package org.flowable.eventregistry.impl.model;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -21,6 +23,7 @@ import org.flowable.eventregistry.api.model.InboundChannelModelBuilder;
 import org.flowable.eventregistry.json.converter.ChannelJsonConverter;
 import org.flowable.eventregistry.model.ChannelEventKeyDetection;
 import org.flowable.eventregistry.model.ChannelEventTenantIdDetection;
+import org.flowable.eventregistry.model.ChannelListener;
 import org.flowable.eventregistry.model.ChannelModel;
 import org.flowable.eventregistry.model.DelegateExpressionInboundChannelModel;
 import org.flowable.eventregistry.model.InboundChannelModel;
@@ -351,11 +354,24 @@ public class InboundChannelDefinitionBuilderImpl implements InboundChannelModelB
         }
 
         @Override
+        public InboundEventProcessingPipelineBuilder eventProcessingPipelineListener(String delegateExpression) {
+            Collection<ChannelListener> pipelineListeners = this.channelModel.getPipelineListeners();
+            if (pipelineListeners == null) {
+                pipelineListeners = new ArrayList<>();
+                this.channelModel.setPipelineListeners(pipelineListeners);
+            }
+            ChannelListener listener = new ChannelListener();
+            listener.setType("expression");
+            listener.setImplementation(delegateExpression);
+            pipelineListeners.add(listener);
+            return this;
+        }
+
+        @Override
         public InboundChannelModelBuilder eventProcessingPipeline(String delegateExpression) {
             this.channelModel.setPipelineDelegateExpression(delegateExpression);
             return channelDefinitionBuilder;
         }
-
     }
 
     public static class InboundEventKeyJsonDetectorBuilderImpl implements InboundEventKeyJsonDetectorBuilder {

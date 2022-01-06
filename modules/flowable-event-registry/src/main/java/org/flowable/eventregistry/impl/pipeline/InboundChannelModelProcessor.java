@@ -12,6 +12,8 @@
  */
 package org.flowable.eventregistry.impl.pipeline;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 
 import org.apache.commons.lang3.StringUtils;
@@ -20,6 +22,7 @@ import org.flowable.common.engine.impl.el.VariableContainerWrapper;
 import org.flowable.eventregistry.api.ChannelModelProcessor;
 import org.flowable.eventregistry.api.EventRegistry;
 import org.flowable.eventregistry.api.EventRepositoryService;
+import org.flowable.eventregistry.api.InboundChannelPipelineListener;
 import org.flowable.eventregistry.api.InboundEventDeserializer;
 import org.flowable.eventregistry.api.InboundEventKeyDetector;
 import org.flowable.eventregistry.api.InboundEventPayloadExtractor;
@@ -41,6 +44,7 @@ import org.flowable.eventregistry.impl.transformer.DefaultInboundEventTransforme
 import org.flowable.eventregistry.impl.util.CommandContextUtil;
 import org.flowable.eventregistry.model.ChannelEventKeyDetection;
 import org.flowable.eventregistry.model.ChannelEventTenantIdDetection;
+import org.flowable.eventregistry.model.ChannelListener;
 import org.flowable.eventregistry.model.ChannelModel;
 import org.flowable.eventregistry.model.InboundChannelModel;
 import org.w3c.dom.Document;
@@ -62,12 +66,12 @@ public class InboundChannelModelProcessor implements ChannelModelProcessor {
                     EventRepositoryService eventRepositoryService, boolean fallbackToDefaultTenant) {
         
         if (channelModel instanceof InboundChannelModel) {
-            registerChannelModel((InboundChannelModel) channelModel, eventRepositoryService, fallbackToDefaultTenant);
+            registerChannelModel((InboundChannelModel) channelModel, tenantId, eventRepositoryService, fallbackToDefaultTenant);
         }
 
     }
 
-    protected void registerChannelModel(InboundChannelModel inboundChannelModel, EventRepositoryService eventRepositoryService, boolean fallbackToDefaultTenant) {
+    protected void registerChannelModel(InboundChannelModel inboundChannelModel, String tenantId, EventRepositoryService eventRepositoryService, boolean fallbackToDefaultTenant) {
         if (inboundChannelModel.getInboundEventProcessingPipeline() == null) {
 
             InboundEventProcessingPipeline eventProcessingPipeline;
@@ -88,10 +92,30 @@ public class InboundChannelModelProcessor implements ChannelModelProcessor {
             }
 
             if (eventProcessingPipeline != null) {
-                inboundChannelModel.setInboundEventProcessingPipeline(eventProcessingPipeline);
+                inboundChannelModel.setInboundEventProcessingPipeline(postProcessInboundEventProcessingPipeline(inboundChannelModel, tenantId, eventProcessingPipeline));
             }
 
         }
+    }
+
+    protected InboundEventProcessingPipeline postProcessInboundEventProcessingPipeline(InboundChannelModel inboundChannelModel, String tenantId, InboundEventProcessingPipeline pipeline) {
+        Collection<ChannelListener> listeners = inboundChannelModel.getPipelineListeners();
+
+        if (listeners == null || listeners.isEmpty()) {
+            return pipeline;
+        }
+
+        Collection<InboundChannelPipelineListener> pipelineListeners = new ArrayList<>(listeners.size());
+        for (ChannelListener listener : listeners) {
+            if ("expression".equals(listener.getType())) {
+                pipelineListeners.add(resolveExpression(listener.getImplementation(), InboundChannelPipelineListener.class));
+            } else {
+                throw new FlowableException(
+                        "Channel Pipeline Listener type " + listener.getType() + " for channel model with key " + inboundChannelModel.getKey() + " is not supported");
+            }
+        }
+
+        return new ListenerInvokingInboundEventProcessingPipeline(pipeline, tenantId, pipelineListeners);
     }
 
     protected InboundEventProcessingPipeline createJsonEventProcessingPipeline(InboundChannelModel channelModel,

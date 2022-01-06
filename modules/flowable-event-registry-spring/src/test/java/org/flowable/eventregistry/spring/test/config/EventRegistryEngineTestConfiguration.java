@@ -13,6 +13,7 @@
 package org.flowable.eventregistry.spring.test.config;
 
 import java.sql.Driver;
+import java.util.function.Consumer;
 
 import javax.sql.DataSource;
 
@@ -58,7 +59,7 @@ public class EventRegistryEngineTestConfiguration {
 
     @Bean
     public SpringEventRegistryEngineConfiguration eventRegistryEngineConfiguration(DataSource dataSource, PlatformTransactionManager transactionManager,
-                    ObjectProvider<ChannelModelProcessor> channelDefinitionProcessors) {
+                    ObjectProvider<ChannelModelProcessor> channelDefinitionProcessors, ObjectProvider<Consumer<SpringEventRegistryEngineConfiguration>> configurationCustomizers) {
         
         SpringEventRegistryEngineConfiguration engineConfiguration = new SpringEventRegistryEngineConfiguration();
         engineConfiguration.setDataSource(dataSource);
@@ -67,7 +68,8 @@ public class EventRegistryEngineTestConfiguration {
 
         channelDefinitionProcessors.stream().forEach(engineConfiguration::addChannelModelProcessor);
 
-        engineConfiguration.setEnableEventRegistryChangeDetection(true);
+        configurationCustomizers.orderedStream()
+                        .forEach(customizer -> customizer.accept(engineConfiguration));
 
         return engineConfiguration;
     }

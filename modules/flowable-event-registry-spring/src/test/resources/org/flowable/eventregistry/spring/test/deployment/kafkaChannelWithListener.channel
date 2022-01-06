@@ -1,0 +1,20 @@
+{
+    "key": "newCustomerChannel",
+    "category": "channel",
+    "name": "Test channel",
+    "channelType": "inbound",
+    "type": "kafka",
+    "topics": [
+        "test-new-customer"
+    ],
+    "deserializerType": "json",
+    "channelEventKeyDetection": {
+        "jsonField": "eventKey"
+    },
+    "pipelineListeners": [
+        {
+            "type": "expression",
+            "implementation": "${customPipelineListener}"
+        }
+    ]
+}

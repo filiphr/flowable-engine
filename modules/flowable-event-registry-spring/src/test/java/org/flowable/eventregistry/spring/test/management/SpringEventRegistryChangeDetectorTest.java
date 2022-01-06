@@ -19,6 +19,7 @@ import org.flowable.eventregistry.impl.EventRegistryEngine;
 import org.flowable.eventregistry.impl.management.DefaultEventRegistryChangeDetectionManager;
 import org.flowable.eventregistry.spring.management.DefaultSpringEventRegistryChangeDetectionExecutor;
 import org.flowable.eventregistry.spring.test.FlowableEventSpringExtension;
+import org.flowable.eventregistry.spring.test.config.EnableChangeDetectionConfiguration;
 import org.flowable.eventregistry.spring.test.jms.EventRegistryJmsConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +30,10 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 /**
  * @author Joram Barrez
  */
-@SpringJUnitConfig(classes = EventRegistryJmsConfiguration.class)
+@SpringJUnitConfig(classes = {
+        EventRegistryJmsConfiguration.class,
+        EnableChangeDetectionConfiguration.class,
+})
 @ExtendWith(FlowableEventSpringExtension.class)
 public class SpringEventRegistryChangeDetectorTest {
 

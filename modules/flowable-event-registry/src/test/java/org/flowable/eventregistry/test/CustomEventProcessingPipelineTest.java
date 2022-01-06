@@ -13,12 +13,15 @@
 package org.flowable.eventregistry.test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.flowable.eventregistry.api.EventRegistry;
 import org.flowable.eventregistry.api.EventRegistryEvent;
@@ -30,6 +33,7 @@ import org.flowable.eventregistry.api.InboundEventProcessingPipeline;
 import org.flowable.eventregistry.api.InboundEventTenantDetector;
 import org.flowable.eventregistry.api.InboundEventTransformer;
 import org.flowable.eventregistry.api.OutboundEventChannelAdapter;
+import org.flowable.eventregistry.api.OutboundEventChannelAdapterListener;
 import org.flowable.eventregistry.api.OutboundEventProcessingPipeline;
 import org.flowable.eventregistry.api.OutboundEventSerializer;
 import org.flowable.eventregistry.api.runtime.EventInstance;
@@ -44,6 +48,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * @author Joram Barrez
+ * @author Filip Hrisafov
  */
 public class CustomEventProcessingPipelineTest extends AbstractFlowableEventTest {
 
@@ -203,6 +208,137 @@ public class CustomEventProcessingPipelineTest extends AbstractFlowableEventTest
 
         assertThat(testOutboundChannelAdapter.counter.get()).isEqualTo(1);
         assertThat(testOutboundEventProcessingPipeline.counter.get()).isEqualTo(1);
+    }
+
+    @Test
+    public void testCustomOutboundAdapterWithListener() {
+        AtomicReference<String> adapterChannelKey = new AtomicReference<>();
+        AtomicReference<String> adapterChannelTenant = new AtomicReference<>();
+        AtomicReference<Object> adapterRawEvent = new AtomicReference<>();
+        AtomicBoolean afterSendEventInvoked = new AtomicBoolean(false);
+
+        TestOutboundChannelAdapter testOutboundChannelAdapter = new TestOutboundChannelAdapter();
+        TestOutboundEventProcessingPipeline testOutboundEventProcessingPipeline = new TestOutboundEventProcessingPipeline();
+        OutboundEventChannelAdapterListener adapterListener = new OutboundEventChannelAdapterListener() {
+
+            @Override
+            public void beforeSendEvent(String channelKey, String tenantId, Object rawEvent) {
+                adapterChannelKey.set(channelKey);
+                adapterChannelTenant.set(tenantId);
+                adapterRawEvent.set(rawEvent);
+            }
+
+            @Override
+            public void afterSendEvent(String channelKey, String tenantId, Object rawEvent) {
+                assertThat(adapterChannelKey).hasValue(channelKey);
+                assertThat(adapterChannelTenant).hasValue(tenantId);
+                assertThat(adapterRawEvent).hasValue(rawEvent);
+                afterSendEventInvoked.set(true);
+            }
+
+            @Override
+            public void exceptionOnSendEvent(String channelKey, String tenantId, Object rawEvent, Exception exception) {
+                fail("exceptionOnSendEvent for channel " + channelKey + " should not be invoked", exception);
+            }
+        };
+
+        Map<Object, Object> beans = eventEngineConfiguration.getExpressionManager().getBeans();
+        beans.put("testOutboundChannelAdapter", testOutboundChannelAdapter);
+        beans.put("testOutboundEventProcessingPipeline", testOutboundEventProcessingPipeline);
+        beans.put("adapterListener", adapterListener);
+
+        eventRegistryEngine.getEventRepositoryService().createOutboundChannelModelBuilder()
+            .key("customTestOutboundChannel")
+            .resourceName("customOutboundTest.channel")
+            .channelAdapter("${testOutboundChannelAdapter}")
+            .channelAdapterListener("${adapterListener}")
+            .eventProcessingPipeline("${testOutboundEventProcessingPipeline}")
+            .deploy();
+
+        eventRegistryEngine.getEventRepositoryService().createEventModelBuilder()
+            .key("testKey")
+            .deploymentTenantId("testTenantId")
+            .resourceName("myEvent.event")
+            .deploy();
+
+        EventModel eventModel = eventRegistryEngine.getEventRepositoryService().getEventModelByKey("testKey", "testTenantId");
+        ChannelModel channelModel = eventRegistryEngine.getEventRepositoryService().getChannelModelByKey("customTestOutboundChannel");
+
+        EventInstanceImpl eventInstance = new EventInstanceImpl(eventModel.getKey(), Collections.emptyList(), "testTenantId");
+        eventRegistryEngine.getEventRegistry().sendEventOutbound(eventInstance, Collections.singleton(channelModel));
+
+        assertThat(testOutboundChannelAdapter.counter.get()).isEqualTo(1);
+        assertThat(testOutboundEventProcessingPipeline.counter.get()).isEqualTo(1);
+        assertThat(adapterChannelKey).hasValue("customTestOutboundChannel");
+        assertThat(adapterChannelTenant).hasValue("");
+        assertThat(adapterRawEvent).hasValue("test");
+        assertThat(afterSendEventInvoked).isTrue();
+    }
+
+    @Test
+    public void testCustomOutboundAdapterThrowsExceptionWithListener() {
+        AtomicReference<String> adapterChannelKey = new AtomicReference<>();
+        AtomicReference<String> adapterChannelTenant = new AtomicReference<>();
+        AtomicReference<Object> adapterRawEvent = new AtomicReference<>();
+        AtomicBoolean afterExceptionOnSendEventInvoked = new AtomicBoolean(false);
+
+        OutboundEventChannelAdapter<?> testOutboundChannelAdapter = rawEvent -> {
+            throw new RuntimeException("Error during event sending");
+        };
+        TestOutboundEventProcessingPipeline testOutboundEventProcessingPipeline = new TestOutboundEventProcessingPipeline();
+        OutboundEventChannelAdapterListener adapterListener = new OutboundEventChannelAdapterListener() {
+
+            @Override
+            public void beforeSendEvent(String channelKey, String tenantId, Object rawEvent) {
+                adapterChannelKey.set(channelKey);
+                adapterChannelTenant.set(tenantId);
+                adapterRawEvent.set(rawEvent);
+            }
+
+            @Override
+            public void afterSendEvent(String channelKey, String tenantId, Object rawEvent) {
+                fail("afterSendEvent for channel " + channelKey + " should not be invoked");
+            }
+
+            @Override
+            public void exceptionOnSendEvent(String channelKey, String tenantId, Object rawEvent, Exception exception) {
+                assertThat(adapterChannelKey).hasValue(channelKey);
+                assertThat(adapterChannelTenant).hasValue(tenantId);
+                assertThat(adapterRawEvent).hasValue(rawEvent);
+                afterExceptionOnSendEventInvoked.set(true);
+            }
+        };
+
+        Map<Object, Object> beans = eventEngineConfiguration.getExpressionManager().getBeans();
+        beans.put("testOutboundChannelAdapter", testOutboundChannelAdapter);
+        beans.put("testOutboundEventProcessingPipeline", testOutboundEventProcessingPipeline);
+        beans.put("adapterListener", adapterListener);
+
+        eventRegistryEngine.getEventRepositoryService().createOutboundChannelModelBuilder()
+            .key("customTestOutboundChannel")
+            .resourceName("customOutboundTest.channel")
+            .channelAdapter("${testOutboundChannelAdapter}")
+            .channelAdapterListener("${adapterListener}")
+            .eventProcessingPipeline("${testOutboundEventProcessingPipeline}")
+            .deploy();
+
+        eventRegistryEngine.getEventRepositoryService().createEventModelBuilder()
+            .key("testKey")
+            .deploymentTenantId("testTenantId")
+            .resourceName("myEvent.event")
+            .deploy();
+
+        EventModel eventModel = eventRegistryEngine.getEventRepositoryService().getEventModelByKey("testKey", "testTenantId");
+        ChannelModel channelModel = eventRegistryEngine.getEventRepositoryService().getChannelModelByKey("customTestOutboundChannel");
+
+        EventInstanceImpl eventInstance = new EventInstanceImpl(eventModel.getKey(), Collections.emptyList(), "testTenantId");
+        eventRegistryEngine.getEventRegistry().sendEventOutbound(eventInstance, Collections.singleton(channelModel));
+
+        assertThat(testOutboundEventProcessingPipeline.counter.get()).isEqualTo(1);
+        assertThat(adapterChannelKey).hasValue("customTestOutboundChannel");
+        assertThat(adapterChannelTenant).hasValue("");
+        assertThat(adapterRawEvent).hasValue("test");
+        assertThat(afterExceptionOnSendEventInvoked).isTrue();
     }
 
     private static class TestInboundChannelAdapter implements InboundEventChannelAdapter {

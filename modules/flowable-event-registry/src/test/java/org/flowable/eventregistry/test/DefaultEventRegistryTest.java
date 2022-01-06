@@ -13,7 +13,10 @@
 package org.flowable.eventregistry.test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -22,14 +25,18 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.flowable.eventregistry.api.EventDeployment;
 import org.flowable.eventregistry.api.EventRegistry;
 import org.flowable.eventregistry.api.EventRegistryEvent;
 import org.flowable.eventregistry.api.EventRegistryEventConsumer;
+import org.flowable.eventregistry.api.InboundChannelPipelineListener;
 import org.flowable.eventregistry.api.InboundEventChannelAdapter;
 import org.flowable.eventregistry.api.InboundEventDeserializer;
 import org.flowable.eventregistry.api.InboundEventPayloadExtractor;
+import org.flowable.eventregistry.api.InboundEventProcessingPipeline;
 import org.flowable.eventregistry.api.model.EventPayloadTypes;
 import org.flowable.eventregistry.api.runtime.EventInstance;
 import org.flowable.eventregistry.api.runtime.EventPayloadInstance;
@@ -149,6 +156,120 @@ public class DefaultEventRegistryTest extends AbstractFlowableEventTest {
                 );
     }
 
+    @Test
+    public void testDefaultInboundEventPipelineWithPipelineListener() {
+        AtomicReference<String> pipelineChannelKey = new AtomicReference<>();
+        AtomicReference<String> pipelineChannelTenant = new AtomicReference<>();
+        AtomicReference<Object> pipelineRawEvent = new AtomicReference<>();
+        AtomicBoolean afterPipelineInvoked = new AtomicBoolean(false);
+        TestInboundEventChannelAdapter inboundEventChannelAdapter = setupTestChannelWithPipelineListener(new InboundChannelPipelineListener() {
+
+            @Override
+            public void beforePipelineRun(String channelKey, String tenantId, Object rawEvent) {
+                pipelineChannelKey.set(channelKey);
+                pipelineChannelTenant.set(tenantId);
+                pipelineRawEvent.set(rawEvent);
+            }
+
+            @Override
+            public void afterPipelineRun(String channelKey, String tenantId, Object rawEvent, Collection<EventRegistryEvent> events) {
+                assertThat(pipelineChannelKey).hasValue(channelKey);
+                assertThat(pipelineChannelTenant).hasValue(tenantId);
+                assertThat(pipelineRawEvent).hasValue(rawEvent);
+                afterPipelineInvoked.set(true);
+            }
+
+            @Override
+            public void exceptionOnPipelineRun(String channelKey, String tenantId, Object rawEvent, Exception exception) {
+                fail("exceptionOnPipelineRun for channel " + channelKey + " should not be invoked", exception);
+            }
+        });
+
+        repositoryService.createEventModelBuilder()
+                .key("myEvent")
+                .resourceName("myEvent.event")
+                .correlationParameter("customerId", EventPayloadTypes.STRING)
+                .payload("payload1", EventPayloadTypes.STRING)
+                .payload("payload2", EventPayloadTypes.INTEGER)
+                .deploy();
+
+        inboundEventChannelAdapter.triggerTestEvent();
+
+        assertThat(testEventConsumer.eventsReceived).hasSize(1);
+        FlowableEventRegistryEvent eventRegistryEvent = (FlowableEventRegistryEvent) testEventConsumer.eventsReceived.get(0);
+
+        EventInstance eventInstance = eventRegistryEvent.getEventInstance();
+        assertThat(eventInstance.getEventKey()).isEqualTo("myEvent");
+
+        assertThat(eventInstance.getCorrelationParameterInstances())
+                .extracting(EventPayloadInstance::getValue)
+                .containsOnly("test");
+        assertThat(eventInstance.getPayloadInstances())
+                .extracting(EventPayloadInstance::getDefinitionName, EventPayloadInstance::getDefinitionType, EventPayloadInstance::getValue)
+                .containsOnly(
+                        tuple("customerId", EventPayloadTypes.STRING, "test"),
+                        tuple("payload1", EventPayloadTypes.STRING, "Hello World"),
+                        tuple("payload2", EventPayloadTypes.INTEGER, 123)
+                );
+
+        assertThat(pipelineChannelKey).hasValue("test-channel");
+        assertThat(pipelineChannelTenant).hasValue("");
+        assertThat(pipelineRawEvent.get())
+                .asInstanceOf(STRING)
+                .isEqualTo(inboundEventChannelAdapter.createTestEventString());
+        assertThat(afterPipelineInvoked).isTrue();
+    }
+
+    @Test
+    public void testDefaultInboundEventPipelineThrowsExceptionWithPipelineListener() {
+        AtomicReference<String> pipelineChannelKey = new AtomicReference<>();
+        AtomicReference<String> pipelineChannelTenant = new AtomicReference<>();
+        AtomicReference<Object> pipelineRawEvent = new AtomicReference<>();
+        AtomicBoolean exceptionOnPipelineRunInvoked = new AtomicBoolean(false);
+        TestInboundEventChannelAdapter inboundEventChannelAdapter = setupTestChannelWithCustomPipelineAndPipelineListener(
+                (channelKey, rawEvent) -> {
+                    throw new RuntimeException("Error during processing");
+                },
+                new InboundChannelPipelineListener() {
+
+                    @Override
+                    public void beforePipelineRun(String channelKey, String tenantId, Object rawEvent) {
+                        pipelineChannelKey.set(channelKey);
+                        pipelineChannelTenant.set(tenantId);
+                        pipelineRawEvent.set(rawEvent);
+                    }
+
+                    @Override
+                    public void afterPipelineRun(String channelKey, String tenantId, Object rawEvent, Collection<EventRegistryEvent> events) {
+                        fail("afterPipelineRun for channel " + channelKey + " should not be invoked");
+                    }
+
+                    @Override
+                    public void exceptionOnPipelineRun(String channelKey, String tenantId, Object rawEvent, Exception exception) {
+                        assertThat(pipelineChannelKey).hasValue(channelKey);
+                        assertThat(pipelineChannelTenant).hasValue(tenantId);
+                        assertThat(pipelineRawEvent).hasValue(rawEvent);
+                        assertThat(exception)
+                                .isExactlyInstanceOf(RuntimeException.class)
+                                .hasMessage("Error during processing");
+                        exceptionOnPipelineRunInvoked.set(true);
+                    }
+                });
+
+        assertThatThrownBy(inboundEventChannelAdapter::triggerTestEvent)
+                .isExactlyInstanceOf(RuntimeException.class)
+                .hasMessage("Error during processing");
+
+        assertThat(testEventConsumer.eventsReceived).isEmpty();
+        assertThat(pipelineChannelKey).hasValue("test-channel");
+        assertThat(pipelineChannelTenant).hasValue("");
+        assertThat(pipelineRawEvent.get())
+                .asInstanceOf(STRING)
+                .isEqualTo(inboundEventChannelAdapter.createTestEventString());
+        assertThat(exceptionOnPipelineRunInvoked).isTrue();
+    }
+
+
     protected TestInboundEventChannelAdapter setupTestChannel() {
         TestInboundEventChannelAdapter inboundEventChannelAdapter = new TestInboundEventChannelAdapter();
         eventEngineConfiguration.getExpressionManager().getBeans()
@@ -226,6 +347,46 @@ public class DefaultEventRegistryTest extends AbstractFlowableEventTest {
         return inboundEventChannelAdapter;
     }
 
+    protected TestInboundEventChannelAdapter setupTestChannelWithPipelineListener(InboundChannelPipelineListener pipelineListener) {
+        TestInboundEventChannelAdapter inboundEventChannelAdapter = new TestInboundEventChannelAdapter();
+        eventEngineConfiguration.getExpressionManager().getBeans()
+                .put("inboundEventChannelAdapter", inboundEventChannelAdapter);
+        eventEngineConfiguration.getExpressionManager().getBeans()
+                .put("pipelineListener", pipelineListener);
+
+        eventEngineConfiguration.getEventRepositoryService().createInboundChannelModelBuilder()
+                .key("test-channel")
+                .resourceName("test.channel")
+                .channelAdapter("${inboundEventChannelAdapter}")
+                .eventProcessingPipelineListener("${pipelineListener}")
+                .jsonDeserializer()
+                .detectEventKeyUsingJsonField("type")
+                .jsonFieldsMapDirectlyToPayload()
+                .deploy();
+
+        return inboundEventChannelAdapter;
+    }
+
+    protected TestInboundEventChannelAdapter setupTestChannelWithCustomPipelineAndPipelineListener(InboundEventProcessingPipeline pipeline, InboundChannelPipelineListener pipelineListener) {
+        TestInboundEventChannelAdapter inboundEventChannelAdapter = new TestInboundEventChannelAdapter();
+        eventEngineConfiguration.getExpressionManager().getBeans()
+                .put("inboundEventChannelAdapter", inboundEventChannelAdapter);
+        eventEngineConfiguration.getExpressionManager().getBeans()
+                .put("pipeline", pipeline);
+        eventEngineConfiguration.getExpressionManager().getBeans()
+                .put("pipelineListener", pipelineListener);
+
+        eventEngineConfiguration.getEventRepositoryService().createInboundChannelModelBuilder()
+                .key("test-channel")
+                .resourceName("test.channel")
+                .channelAdapter("${inboundEventChannelAdapter}")
+                .eventProcessingPipelineListener("${pipelineListener}")
+                .eventProcessingPipeline("${pipeline}")
+                .deploy();
+
+        return inboundEventChannelAdapter;
+    }
+
     private static class TestEventConsumer implements EventRegistryEventConsumer {
 
         public List<EventRegistryEvent> eventsReceived = new ArrayList<>();
@@ -257,7 +418,7 @@ public class DefaultEventRegistryTest extends AbstractFlowableEventTest {
             this.eventRegistry = eventRegistry;
         }
 
-        public void triggerTestEvent() {
+        protected String createTestEventString() {
             ObjectMapper objectMapper = new ObjectMapper();
 
             ObjectNode json = objectMapper.createObjectNode();
@@ -266,10 +427,14 @@ public class DefaultEventRegistryTest extends AbstractFlowableEventTest {
             json.put("payload1", "Hello World");
             json.put("payload2", 123);
             try {
-                eventRegistry.eventReceived(inboundChannelModel, objectMapper.writeValueAsString(json));
+                return objectMapper.writeValueAsString(json);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        public void triggerTestEvent() {
+            eventRegistry.eventReceived(inboundChannelModel, createTestEventString());
         }
 
     }

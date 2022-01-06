@@ -15,19 +15,24 @@ package org.flowable.eventregistry.spring.test.jms;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 import static org.awaitility.Awaitility.await;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.flowable.eventregistry.api.EventDeployment;
 import org.flowable.eventregistry.api.EventRegistry;
 import org.flowable.eventregistry.api.EventRegistryEvent;
 import org.flowable.eventregistry.api.EventRepositoryService;
+import org.flowable.eventregistry.api.InboundChannelPipelineListener;
+import org.flowable.eventregistry.api.OutboundEventChannelAdapterListener;
 import org.flowable.eventregistry.api.model.EventPayloadTypes;
 import org.flowable.eventregistry.api.runtime.EventInstance;
 import org.flowable.eventregistry.api.runtime.EventPayloadInstance;
@@ -40,6 +45,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.test.context.TestPropertySource;
 
@@ -61,6 +71,11 @@ class JmsChannelDefinitionProcessorTest {
     @Autowired
     protected EventRepositoryService eventRepositoryService;
 
+    @Autowired
+    protected ApplicationContext applicationContext;
+
+    protected Collection<String> customRegisteredBeans = new HashSet<>();
+
     protected TestEventConsumer testEventConsumer;
 
     @BeforeEach
@@ -79,6 +94,8 @@ class JmsChannelDefinitionProcessorTest {
         }
         
         eventRegistry.removeFlowableEventRegistryEventConsumer(testEventConsumer);
+        BeanDefinitionRegistry registry = (BeanDefinitionRegistry) ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
+        customRegisteredBeans.forEach(registry::removeBeanDefinition);
     }
 
     @Test
@@ -384,6 +401,67 @@ class JmsChannelDefinitionProcessorTest {
     }
 
     @Test
+    void receivingEventShouldInvokePipelineListener() {
+        AtomicReference<String> pipelineKey = new AtomicReference<>();
+        AtomicReference<String> pipelineTenant = new AtomicReference<>();
+        AtomicReference<Object> pipelineRawEvent = new AtomicReference<>();
+
+        registerBean("customPipelineListener", InboundChannelPipelineListener.class, new InboundChannelPipelineListener() {
+
+            @Override
+            public void beforePipelineRun(String channelKey, String tenantId, Object rawEvent) {
+                pipelineKey.set(channelKey);
+                pipelineTenant.set(tenantId);
+                pipelineRawEvent.set(rawEvent);
+            }
+
+        });
+
+        EventDeployment deployment = eventRepositoryService.createDeployment()
+                .addClasspathResource("org/flowable/eventregistry/spring/test/deployment/jmsEvent.event")
+                .addClasspathResource("org/flowable/eventregistry/spring/test/deployment/jmsChannelWithListener.channel")
+                .deploy();
+
+        try {
+            String eventMessage = "{"
+                    + "    \"eventKey\": \"test\","
+                    + "    \"customer\": \"kermit\","
+                    + "    \"name\": \"Kermit the Frog\""
+                    + "}";
+            jmsTemplate.convertAndSend("test-customer-listener", eventMessage);
+
+            await("receive events")
+                    .atMost(Duration.ofSeconds(5))
+                    .pollInterval(Duration.ofMillis(200))
+                    .untilAsserted(() -> assertThat(testEventConsumer.getEvents())
+                            .extracting(EventRegistryEvent::getType)
+                            .containsExactlyInAnyOrder("test"));
+
+            EventInstance eventInstance = (EventInstance) testEventConsumer.getEvents().get(0).getEventObject();
+
+            assertThat(eventInstance).isNotNull();
+            assertThat(eventInstance.getPayloadInstances())
+                    .extracting(EventPayloadInstance::getDefinitionName, EventPayloadInstance::getValue)
+                    .containsExactlyInAnyOrder(
+                            tuple("customer", "kermit"),
+                            tuple("name", "Kermit the Frog")
+                    );
+            assertThat(eventInstance.getCorrelationParameterInstances())
+                    .extracting(EventPayloadInstance::getDefinitionName, EventPayloadInstance::getValue)
+                    .containsExactlyInAnyOrder(
+                            tuple("customer", "kermit")
+                    );
+
+            assertThat(pipelineKey).hasValue("testChannel");
+            assertThat(pipelineTenant).hasValue("");
+            assertThat(pipelineRawEvent).hasValue(eventMessage);
+
+        } finally {
+            eventRepositoryService.deleteDeployment(deployment.getId());
+        }
+    }
+
+    @Test
     void eventShouldBeSendAfterOutboundChannelDefinitionIsRegistered() {
         eventRepositoryService.createEventModelBuilder()
             .resourceName("testEvent.event")
@@ -557,5 +635,65 @@ class JmsChannelDefinitionProcessorTest {
                         + "  customer: 'kermit',"
                         + "  name: 'Kermit the Frog'"
                         + "}");
+    }
+
+    @Test
+    void sendingEventShouldInvokeChannelAdapterListener() {
+        AtomicReference<String> adapterKey = new AtomicReference<>();
+        AtomicReference<String> adapterTenant = new AtomicReference<>();
+        AtomicReference<Object> adapterRawEvent = new AtomicReference<>();
+
+        registerBean("customAdapterListener", OutboundEventChannelAdapterListener.class, new OutboundEventChannelAdapterListener() {
+
+            @Override
+            public void beforeSendEvent(String channelKey, String tenantId, Object rawEvent) {
+                adapterKey.set(channelKey);
+                adapterTenant.set(tenantId);
+                adapterRawEvent.set(rawEvent);
+            }
+
+        });
+        EventDeployment deployment = eventRepositoryService.createDeployment()
+                .addClasspathResource("org/flowable/eventregistry/spring/test/deployment/jmsOutboundEvent.event")
+                .addClasspathResource("org/flowable/eventregistry/spring/test/deployment/jmsOutboundChannelWithListener.channel")
+                .deploy();
+
+        try {
+
+            ChannelModel channelModel = eventRepositoryService.getChannelModelByKey("outboundCustomer");
+
+            Collection<EventPayloadInstance> payloadInstances = new ArrayList<>();
+            payloadInstances.add(new EventPayloadInstanceImpl(new EventPayload("customer", EventPayloadTypes.STRING), "kermit"));
+            payloadInstances.add(new EventPayloadInstanceImpl(new EventPayload("name", EventPayloadTypes.STRING), "Kermit the Frog"));
+            EventInstance kermitEvent = new EventInstanceImpl("customer", payloadInstances);
+
+            eventRegistry.sendEventOutbound(kermitEvent, Collections.singleton(channelModel));
+
+            Object message = jmsTemplate.receiveAndConvert("outbound-customer");
+            assertThat(message).isNotNull();
+            assertThatJson(message)
+                    .isEqualTo("{"
+                            + "  customer: 'kermit',"
+                            + "  name: 'Kermit the Frog'"
+                            + "}");
+
+            assertThat(adapterKey).hasValue("outboundCustomer");
+            assertThat(adapterTenant).hasValue("");
+            assertThat(adapterRawEvent.get())
+                    .asInstanceOf(STRING)
+                    .satisfies(event -> assertThatJson(event).isEqualTo("{"
+                            + "  customer: 'kermit',"
+                            + "  name: 'Kermit the Frog'"
+                            + "}"));
+        } finally {
+            eventRepositoryService.deleteDeployment(deployment.getId());
+        }
+    }
+
+    <T> void registerBean(String beanName, Class<T> beanClass, T bean) {
+        BeanDefinition definition = BeanDefinitionBuilder.genericBeanDefinition(beanClass, () -> bean).getBeanDefinition();
+        BeanDefinitionRegistry registry = (BeanDefinitionRegistry) ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
+        registry.registerBeanDefinition(beanName, definition);
+        customRegisteredBeans.add(beanName);
     }
 }

@@ -15,6 +15,7 @@ package org.flowable.eventregistry.spring.test.kafka;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 import static org.awaitility.Awaitility.await;
 
 import java.time.Duration;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
@@ -44,6 +46,8 @@ import org.flowable.eventregistry.api.EventDeployment;
 import org.flowable.eventregistry.api.EventRegistry;
 import org.flowable.eventregistry.api.EventRegistryEvent;
 import org.flowable.eventregistry.api.EventRepositoryService;
+import org.flowable.eventregistry.api.InboundChannelPipelineListener;
+import org.flowable.eventregistry.api.OutboundEventChannelAdapterListener;
 import org.flowable.eventregistry.api.model.EventPayloadTypes;
 import org.flowable.eventregistry.api.runtime.EventInstance;
 import org.flowable.eventregistry.api.runtime.EventPayloadInstance;
@@ -56,6 +60,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.TestPropertySource;
@@ -83,6 +92,11 @@ class KafkaChannelDefinitionProcessorTest {
 
     @Autowired
     protected ConsumerFactory<Object, Object> consumerFactory;
+
+    @Autowired
+    protected ApplicationContext applicationContext;
+
+    protected Collection<String> customRegisteredBeans = new HashSet<>();
 
     protected TestEventConsumer testEventConsumer;
 
@@ -128,6 +142,9 @@ class KafkaChannelDefinitionProcessorTest {
         adminClient.deleteRecords(recordsToDelete)
             .all()
             .get(10, TimeUnit.SECONDS);
+
+        BeanDefinitionRegistry registry = (BeanDefinitionRegistry) ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
+        customRegisteredBeans.forEach(registry::removeBeanDefinition);
     }
 
     @Test
@@ -451,6 +468,75 @@ class KafkaChannelDefinitionProcessorTest {
     }
 
     @Test
+    void receivingEventShouldInvokePipelineListener() throws Exception {
+        createTopic("test-new-customer");
+
+        AtomicReference<String> pipelineKey = new AtomicReference<>();
+        AtomicReference<String> pipelineTenant = new AtomicReference<>();
+        AtomicReference<Object> pipelineRawEvent = new AtomicReference<>();
+
+        registerBean("customPipelineListener", InboundChannelPipelineListener.class, new InboundChannelPipelineListener() {
+
+            @Override
+            public void beforePipelineRun(String channelKey, String tenantId, Object rawEvent) {
+                pipelineKey.set(channelKey);
+                pipelineTenant.set(tenantId);
+                pipelineRawEvent.set(rawEvent);
+            }
+
+        });
+
+        EventDeployment deployment = eventRepositoryService.createDeployment()
+                .addClasspathResource("org/flowable/eventregistry/spring/test/deployment/kafkaEvent.event")
+                .addClasspathResource("org/flowable/eventregistry/spring/test/deployment/kafkaChannelWithListener.channel")
+                .deploy();
+
+        try {
+
+            // Give time for the consumers to register properly in the groups
+            // This is linked to the session timeout property for the consumers
+            Thread.sleep(600);
+
+            String eventMessage = "{"
+                    + "    \"eventKey\": \"test\","
+                    + "    \"customer\": \"kermit\","
+                    + "    \"name\": \"Kermit the Frog\""
+                    + "}";
+            kafkaTemplate.send("test-new-customer", eventMessage)
+                    .get(5, TimeUnit.SECONDS);
+
+            await("receive events")
+                    .atMost(Duration.ofSeconds(5))
+                    .pollInterval(Duration.ofMillis(200))
+                    .untilAsserted(() -> assertThat(testEventConsumer.getEvents())
+                            .extracting(EventRegistryEvent::getType)
+                            .containsExactlyInAnyOrder("test"));
+
+            EventInstance eventInstance = (EventInstance) testEventConsumer.getEvents().get(0).getEventObject();
+
+            assertThat(eventInstance).isNotNull();
+            assertThat(eventInstance.getPayloadInstances())
+                    .extracting(EventPayloadInstance::getDefinitionName, EventPayloadInstance::getValue)
+                    .containsExactlyInAnyOrder(
+                            tuple("customer", "kermit"),
+                            tuple("name", "Kermit the Frog")
+                    );
+            assertThat(eventInstance.getCorrelationParameterInstances())
+                    .extracting(EventPayloadInstance::getDefinitionName, EventPayloadInstance::getValue)
+                    .containsExactlyInAnyOrder(
+                            tuple("customer", "kermit")
+                    );
+
+            assertThat(pipelineKey).hasValue("newCustomerChannel");
+            assertThat(pipelineTenant).hasValue("");
+            assertThat(pipelineRawEvent).hasValue(eventMessage);
+
+        } finally {
+            eventRepositoryService.deleteDeployment(deployment.getId());
+        }
+    }
+
+    @Test
     void eventShouldBeSendAfterOutboundChannelDefinitionIsRegistered() throws Exception {
         createTopic("outbound-customer");
 
@@ -607,6 +693,76 @@ class KafkaChannelDefinitionProcessorTest {
         }
     }
 
+    @Test
+    void sendingEventShouldInvokeChannelAdapterListener() {
+        createTopic("outbound-customer");
+        AtomicReference<String> adapterKey = new AtomicReference<>();
+        AtomicReference<String> adapterTenant = new AtomicReference<>();
+        AtomicReference<Object> adapterRawEvent = new AtomicReference<>();
+
+        registerBean("customAdapterListener", OutboundEventChannelAdapterListener.class, new OutboundEventChannelAdapterListener() {
+
+            @Override
+            public void beforeSendEvent(String channelKey, String tenantId, Object rawEvent) {
+                adapterKey.set(channelKey);
+                adapterTenant.set(tenantId);
+                adapterRawEvent.set(rawEvent);
+            }
+
+        });
+
+        EventDeployment deployment = eventRepositoryService.createDeployment()
+                .addClasspathResource("org/flowable/eventregistry/spring/test/deployment/kafkaOutboundEvent.event")
+                .addClasspathResource("org/flowable/eventregistry/spring/test/deployment/kafkaOutboundChannelWithListener.channel")
+                .deploy();
+
+
+        try (Consumer<Object, Object> consumer = consumerFactory.createConsumer("test", "testClient")) {
+            consumer.subscribe(Collections.singleton("outbound-customer"));
+
+            ChannelModel channelModel = eventRepositoryService.getChannelModelByKey("outboundCustomer");
+
+            Collection<EventPayloadInstance> payloadInstances = new ArrayList<>();
+            payloadInstances.add(new EventPayloadInstanceImpl(new EventPayload("customer", EventPayloadTypes.STRING), "kermit"));
+            payloadInstances.add(new EventPayloadInstanceImpl(new EventPayload("name", EventPayloadTypes.STRING), "Kermit the Frog"));
+            EventInstance kermitEvent = new EventInstanceImpl("customer", payloadInstances);
+
+            ConsumerRecords<Object, Object> records = consumer.poll(Duration.ofSeconds(2));
+            assertThat(records).isEmpty();
+            consumer.commitSync();
+            consumer.seekToBeginning(Collections.singleton(new TopicPartition("outbound-customer", 0)));
+
+            eventRegistry.sendEventOutbound(kermitEvent, Collections.singleton(channelModel));
+
+            records = consumer.poll(Duration.ofSeconds(2));
+
+            assertThat(records)
+                    .hasSize(1)
+                    .first()
+                    .isNotNull()
+                    .satisfies(record -> {
+                        assertThat(record.key()).isEqualTo("customer");
+                        assertThatJson(record.value())
+                                .isEqualTo("{"
+                                        + "  customer: 'kermit',"
+                                        + "  name: 'Kermit the Frog'"
+                                        + "}");
+                    });
+
+            assertThat(adapterKey).hasValue("outboundCustomer");
+            assertThat(adapterTenant).hasValue("");
+            assertThat(adapterRawEvent.get())
+                    .asInstanceOf(STRING)
+                    .satisfies(event -> assertThatJson(event).isEqualTo("{"
+                            + "  customer: 'kermit',"
+                            + "  name: 'Kermit the Frog'"
+                            + "}"));
+        } finally {
+            eventRepositoryService.deleteDeployment(deployment.getId());
+        }
+
+    }
+
     protected void createTopic(String topicName) {
 
         CreateTopicsResult topicsResult = adminClient.createTopics(Collections.singleton(new NewTopic(topicName, 1, (short) 1)));
@@ -624,5 +780,12 @@ class KafkaChannelDefinitionProcessorTest {
             throw new AssertionError("Timed out waiting for create topics results", e);
         }
         topicsToDelete.add(topicName);
+    }
+
+    <T> void registerBean(String beanName, Class<T> beanClass, T bean) {
+        BeanDefinition definition = BeanDefinitionBuilder.genericBeanDefinition(beanClass, () -> bean).getBeanDefinition();
+        BeanDefinitionRegistry registry = (BeanDefinitionRegistry) ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
+        registry.registerBeanDefinition(beanName, definition);
+        customRegisteredBeans.add(beanName);
     }
 }

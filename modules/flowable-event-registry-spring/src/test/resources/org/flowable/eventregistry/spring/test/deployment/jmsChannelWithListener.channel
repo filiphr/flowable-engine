@@ -1,0 +1,18 @@
+{
+    "key": "testChannel",
+    "category": "channel",
+    "name": "Test channel",
+    "channelType": "inbound",
+    "type": "jms",
+    "destination": "test-customer-listener",
+    "deserializerType": "json",
+    "channelEventKeyDetection": {
+        "jsonField": "eventKey"
+    },
+    "pipelineListeners": [
+        {
+            "type": "expression",
+            "implementation": "${customPipelineListener}"
+        }
+    ]
+}
