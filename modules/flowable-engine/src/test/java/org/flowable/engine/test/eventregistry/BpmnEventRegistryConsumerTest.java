@@ -128,6 +128,7 @@ public class BpmnEventRegistryConsumerTest extends AbstractBpmnEventRegistryCons
     @Test
     @Deployment
     public void testBoundaryEventWith3CorrelationsAllCombinations() {
+        // The BPMN has boundary events for each combination, the correlation matches a new task will be created
         getEventRepositoryService().createEventModelBuilder()
                 .key("customer")
                 .resourceName("customer.event")
@@ -182,6 +183,7 @@ public class BpmnEventRegistryConsumerTest extends AbstractBpmnEventRegistryCons
     @Test
     @Deployment
     public void testBoundaryEventWith4CorrelationsAllCombinations() {
+        // The BPMN has boundary events for each combination, the correlation matches a new task will be created
         getEventRepositoryService().createEventModelBuilder()
                 .key("testEvent")
                 .resourceName("test.event")
@@ -242,6 +244,69 @@ public class BpmnEventRegistryConsumerTest extends AbstractBpmnEventRegistryCons
                         "ID, First Name and Last Name",
                         "Order ID, First Name and Last Name",
                         "ID, Order ID, First Name and Last Name"
+                );
+    }
+
+    @Test
+    @Deployment(resources = "org/flowable/engine/test/eventregistry/BpmnEventRegistryConsumerTest.testBoundaryEventWith4CorrelationsAllCombinations.bpmn20.xml")
+    public void testBoundaryEventWith4CorrelationsSubsetOfCombinations() {
+        // The BPMN has boundary events for each combination, the correlation matches a new task will be created
+        // In this test we are going to match a subset of the tasks
+        getEventRepositoryService().createEventModelBuilder()
+                .key("testEvent")
+                .resourceName("test.event")
+                .correlationParameter("id", EventPayloadTypes.STRING)
+                .correlationParameter("orderId", EventPayloadTypes.STRING)
+                .correlationParameter("firstName", EventPayloadTypes.STRING)
+                .correlationParameter("lastName", EventPayloadTypes.STRING)
+                .deploy();
+
+        ProcessInstance processInstance = runtimeService.createProcessInstanceBuilder()
+                .processDefinitionKey("multiCorrelationProcess")
+                .variable("customerId", "customer-1")
+                .variable("orderId", "order-1")
+                .variable("firstName", "John")
+                .variable("lastName", "Doe")
+                .start();
+
+        assertThat(taskService.createTaskQuery().processInstanceId(processInstance.getId()).list())
+                .extracting(Task::getName)
+                .containsExactlyInAnyOrder("User task");
+
+        ObjectNode event = processEngineConfiguration.getObjectMapper().createObjectNode()
+                .put("type", "testEvent")
+                .put("id", "customer-2")
+                .put("orderId", "order-1")
+                .put("firstName", "Jane")
+                .put("lastName", "Doe");
+        inboundEventChannelAdapter.triggerTestEvent(event);
+
+        assertThat(taskService.createTaskQuery().processInstanceId(processInstance.getId()).list())
+                .extracting(Task::getName)
+                .containsExactlyInAnyOrder(
+                        "User task",
+                        "Order ID",
+                        "Last Name",
+                        "Order ID and Last Name"
+                );
+
+        event = processEngineConfiguration.getObjectMapper().createObjectNode()
+                .put("type", "testEvent")
+                .put("id", "customer-2")
+                .put("orderId", "order-2")
+                .put("firstName", "John")
+                .put("lastName", "Smith");
+        inboundEventChannelAdapter.triggerTestEvent(event);
+
+        assertThat(taskService.createTaskQuery().processInstanceId(processInstance.getId()).list())
+                .extracting(Task::getName)
+                .containsExactlyInAnyOrder(
+                        "User task",
+                        "Order ID",
+                        "Last Name",
+                        "Order ID and Last Name",
+                        // The following are from the last trigger
+                        "First Name"
                 );
     }
 
