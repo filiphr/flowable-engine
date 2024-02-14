@@ -99,7 +99,7 @@ public class ProcessDiagramLayoutFactory {
 
     protected Document parseXml(InputStream bpmnXmlStream) {
         // Initiate DocumentBuilderFactory
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newDefaultInstance();
         // Get one that understands namespaces
         factory.setNamespaceAware(true);
 

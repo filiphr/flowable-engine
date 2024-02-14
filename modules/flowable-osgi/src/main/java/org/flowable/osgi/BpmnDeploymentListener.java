@@ -66,7 +66,7 @@ public class BpmnDeploymentListener implements ArtifactUrlTransformer {
 
     protected Document parse(File artifact) throws Exception {
         if (dbf == null) {
-            dbf = DocumentBuilderFactory.newInstance();
+            dbf = DocumentBuilderFactory.newDefaultInstance();
             dbf.setNamespaceAware(true);
         }
         DocumentBuilder db = dbf.newDocumentBuilder();

@@ -45,7 +45,7 @@ public class MultipleStartEventValidatorTest {
     public void verifyValidation() throws Exception {
 
         InputStream xmlStream = this.getClass().getClassLoader().getResourceAsStream("org/flowable/engine/test/validation/multipleStartEvent.bpmn20.xml");
-        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
         InputStreamReader in = new InputStreamReader(xmlStream, StandardCharsets.UTF_8);
         XMLStreamReader xtr = xif.createXMLStreamReader(in);
         BpmnModel bpmnModel = new BpmnXMLConverter().convertToBpmnModel(xtr);

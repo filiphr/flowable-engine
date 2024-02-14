@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.xml.XMLConstants;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -154,7 +153,7 @@ public class CmmnXmlConverter implements CmmnXmlConstants {
     }
 
     public CmmnModel convertToCmmnModel(InputStreamProvider inputStreamProvider, boolean validateSchema, boolean enableSafeBpmnXml, String encoding) {
-        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
 
         if (xif.isPropertySupported(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES)) {
             xif.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
@@ -256,7 +255,7 @@ public class CmmnXmlConverter implements CmmnXmlConstants {
     }
 
     protected Schema createSchema() throws SAXException {
-        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        SchemaFactory factory = SchemaFactory.newDefaultInstance();
         Schema schema = null;
         if (classloader != null) {
             schema = factory.newSchema(classloader.getResource(XSD_LOCATION));

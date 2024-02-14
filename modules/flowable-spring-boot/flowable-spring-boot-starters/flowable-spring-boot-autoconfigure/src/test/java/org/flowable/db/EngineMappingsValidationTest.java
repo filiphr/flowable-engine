@@ -295,7 +295,7 @@ public class EngineMappingsValidationTest {
     }
 
     private Document readXmlDocument(String resourceLocation) throws ParserConfigurationException, SAXException, IOException {
-        DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newDefaultInstance();
         docBuilderFactory.setValidating(false);
         docBuilderFactory.setNamespaceAware(false);
         docBuilderFactory.setExpandEntityReferences(false);
@@ -359,7 +359,7 @@ public class EngineMappingsValidationTest {
     private String toString(Node node) {
         try {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            TransformerFactory.newInstance().newTransformer().transform(new DOMSource(node), new StreamResult(byteArrayOutputStream));
+            TransformerFactory.newDefaultInstance().newTransformer().transform(new DOMSource(node), new StreamResult(byteArrayOutputStream));
             return byteArrayOutputStream.toString();
         } catch (TransformerException te) {
             fail();

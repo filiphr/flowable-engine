@@ -54,7 +54,7 @@ public abstract class AbstractConverterTest implements BpmnXMLConstants {
     	Map<String, List<GraphicInfo>> edgesMap = null;
     	Map<String, GraphicInfo> shapesMap = null;
 
-        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
         InputStreamReader in = new InputStreamReader(new ByteArrayInputStream(xml), StandardCharsets.UTF_8);
         XMLStreamReader xtr = xif.createXMLStreamReader(in);
 

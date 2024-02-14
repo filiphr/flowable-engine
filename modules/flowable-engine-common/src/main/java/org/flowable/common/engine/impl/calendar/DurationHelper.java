@@ -74,7 +74,7 @@ public class DurationHelper {
         this.clockReader = clockReader;
         this.maxIterations = maxIterations;
         List<String> expression = Arrays.asList(expressionS.split("/"));
-        datatypeFactory = DatatypeFactory.newInstance();
+        datatypeFactory = DatatypeFactory.newDefaultInstance();
 
         if (expression.size() > 3 || expression.isEmpty()) {
             throw new FlowableIllegalArgumentException("Cannot parse duration");

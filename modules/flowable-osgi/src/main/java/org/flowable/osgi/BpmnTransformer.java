@@ -100,7 +100,7 @@ public class BpmnTransformer {
         out.putNextEntry(e);
         // Copy the new DOM
         if (tf == null) {
-            tf = TransformerFactory.newInstance();
+            tf = TransformerFactory.newDefaultInstance();
         }
         tf.newTransformer().transform(new DOMSource(doc), new StreamResult(out));
         out.closeEntry();
@@ -169,7 +169,7 @@ public class BpmnTransformer {
 
     protected static Document parse(URL url) throws Exception {
         if (dbf == null) {
-            dbf = DocumentBuilderFactory.newInstance();
+            dbf = DocumentBuilderFactory.newDefaultInstance();
             dbf.setNamespaceAware(true);
         }
         DocumentBuilder db = dbf.newDocumentBuilder();

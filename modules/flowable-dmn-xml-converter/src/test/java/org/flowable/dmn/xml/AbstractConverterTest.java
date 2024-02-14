@@ -27,7 +27,7 @@ public abstract class AbstractConverterTest {
 
     protected DmnDefinition readXMLFile() throws Exception {
         InputStream xmlStream = this.getClass().getClassLoader().getResourceAsStream(getResource());
-        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
         InputStreamReader in = new InputStreamReader(xmlStream, StandardCharsets.UTF_8);
         XMLStreamReader xtr = xif.createXMLStreamReader(in);
         return new DmnXMLConverter().convertToDmnModel(xtr);
@@ -35,7 +35,7 @@ public abstract class AbstractConverterTest {
 
     protected DmnDefinition exportAndReadXMLFile(DmnDefinition definition) throws Exception {
         byte[] xml = new DmnXMLConverter().convertToXML(definition);
-        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
         InputStreamReader in = new InputStreamReader(new ByteArrayInputStream(xml), StandardCharsets.UTF_8);
         XMLStreamReader xtr = xif.createXMLStreamReader(in);
         return new DmnXMLConverter().convertToDmnModel(xtr);

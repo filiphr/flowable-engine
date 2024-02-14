@@ -31,7 +31,7 @@ public class StringToXmlDocumentDeserializer implements InboundEventDeserializer
     @Override
     public Document deserialize(Object rawEvent) {
         try {
-            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newDefaultInstance();
             DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
             try (InputStream inputStream = new ByteArrayInputStream(convertEventToBytes(rawEvent))) {
                 Document document = documentBuilder.parse(inputStream);

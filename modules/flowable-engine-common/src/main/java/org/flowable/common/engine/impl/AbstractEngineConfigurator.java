@@ -179,7 +179,7 @@ public abstract class AbstractEngineConfigurator implements EngineConfigurator {
     }
 
     protected DocumentBuilderFactory createDocumentBuilderFactory() throws ParserConfigurationException {
-        DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newDefaultInstance();
         if (!enableMybatisXmlMappingValidation) {
             docBuilderFactory.setValidating(false);
             docBuilderFactory.setNamespaceAware(false);

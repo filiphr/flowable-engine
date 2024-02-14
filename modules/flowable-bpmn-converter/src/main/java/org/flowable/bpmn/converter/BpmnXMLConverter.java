@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.XMLConstants;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -231,7 +230,7 @@ public class BpmnXMLConverter implements BpmnXMLConstants {
     }
 
     protected Schema createSchema() throws SAXException {
-        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        SchemaFactory factory = SchemaFactory.newDefaultInstance();
         Schema schema = null;
         if (classloader != null) {
             schema = factory.newSchema(classloader.getResource(BPMN_XSD));
@@ -252,7 +251,7 @@ public class BpmnXMLConverter implements BpmnXMLConstants {
     }
 
     public BpmnModel convertToBpmnModel(InputStreamProvider inputStreamProvider, boolean validateSchema, boolean enableSafeBpmnXml, String encoding) {
-        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
 
         if (xif.isPropertySupported(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES)) {
             xif.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);

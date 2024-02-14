@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.XMLConstants;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -163,7 +162,7 @@ public class DmnXMLConverter implements DmnXMLConstants {
 
     protected String getTargetNameSpace(InputStream is) {
         try {
-            XMLInputFactory xif = XMLInputFactory.newInstance();
+            XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
             XMLStreamReader xtr = xif.createXMLStreamReader(is);
 
             return getTargetNameSpace(xtr);
@@ -195,7 +194,7 @@ public class DmnXMLConverter implements DmnXMLConstants {
     }
 
     protected Schema createSchema(String xsd) throws SAXException {
-        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        SchemaFactory factory = SchemaFactory.newDefaultInstance();
         Schema schema = null;
         if (classloader != null) {
             schema = factory.newSchema(classloader.getResource(xsd));
@@ -216,7 +215,7 @@ public class DmnXMLConverter implements DmnXMLConstants {
     }
 
     public DmnDefinition convertToDmnModel(InputStreamProvider inputStreamProvider, boolean validateSchema, boolean enableSafeDmnXml, String encoding) {
-        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
 
         if (xif.isPropertySupported(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES)) {
             xif.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);

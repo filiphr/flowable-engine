@@ -70,7 +70,7 @@ public class EntitiesTest {
 
     protected Set<String> getResources(BiConsumer<NodeList, Set<String>> consumer) {
         try {
-            DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newDefaultInstance();
             docBuilderFactory.setValidating(false);
             docBuilderFactory.setNamespaceAware(false);
             docBuilderFactory.setExpandEntityReferences(false);

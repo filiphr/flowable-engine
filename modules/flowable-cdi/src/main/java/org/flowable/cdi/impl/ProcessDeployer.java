@@ -96,7 +96,7 @@ public class ProcessDeployer {
             return result;
         }
         try {
-            Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(processFileUrl.openStream());
+            Document document = DocumentBuilderFactory.newDefaultInstance().newDocumentBuilder().parse(processFileUrl.openStream());
             NodeList nodeList = document.getElementsByTagName(PROCESS_ELEMENT_NAME);
             for (int i = 0; i < nodeList.getLength(); i++) {
                 Node cn = nodeList.item(i);

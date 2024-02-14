@@ -40,7 +40,7 @@ public class EventPayloadToXmlStringSerializer implements OutboundEventSerialize
     public String serialize(EventInstance eventInstance) {
         try {
 
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newDefaultInstance();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
 
             Document doc = docBuilder.newDocument();
@@ -57,7 +57,7 @@ public class EventPayloadToXmlStringSerializer implements OutboundEventSerialize
                 }
             }
 
-            TransformerFactory tf = TransformerFactory.newInstance();
+            TransformerFactory tf = TransformerFactory.newDefaultInstance();
             Transformer transformer = tf.newTransformer();
             StringWriter writer = new StringWriter();
             transformer.transform(new DOMSource(doc), new StreamResult(writer));

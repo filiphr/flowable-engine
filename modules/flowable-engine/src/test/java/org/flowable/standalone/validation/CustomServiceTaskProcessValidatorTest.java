@@ -46,7 +46,7 @@ public class CustomServiceTaskProcessValidatorTest {
         ProcessValidator processValidator = processValidatorFactory.createDefaultProcessValidator();
 
         InputStream xmlStream = this.getClass().getClassLoader().getResourceAsStream("org/flowable/engine/test/validation/customServiceTaskProcess.bpmn20.xml");
-        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
         InputStreamReader in = new InputStreamReader(xmlStream, StandardCharsets.UTF_8);
         XMLStreamReader xtr = xif.createXMLStreamReader(in);
         BpmnModel bpmnModel = new BpmnXMLConverter().convertToBpmnModel(xtr);
@@ -73,7 +73,7 @@ public class CustomServiceTaskProcessValidatorTest {
         ProcessValidator processValidator = processValidatorFactory.createDefaultProcessValidator();
 
         InputStream xmlStream = this.getClass().getClassLoader().getResourceAsStream("org/flowable/engine/test/validation/customServiceTaskProcess.bpmn20.xml");
-        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
         InputStreamReader in = new InputStreamReader(xmlStream, StandardCharsets.UTF_8);
         XMLStreamReader xtr = xif.createXMLStreamReader(in);
         BpmnModel bpmnModel = new BpmnXMLConverter().convertToBpmnModel(xtr);

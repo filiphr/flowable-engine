@@ -248,7 +248,7 @@ public class WSDLImporter implements XMLImporter {
 
     protected Element getRootTypes() {
         try {
-            DocumentBuilder docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            DocumentBuilder docBuilder = DocumentBuilderFactory.newDefaultInstance().newDocumentBuilder();
             Document doc = docBuilder.parse(this.wsdlLocation);
             Element root = (Element) doc.getFirstChild();
             Element typesElement = (Element) root.getElementsByTagName("wsdl:types").item(0);
