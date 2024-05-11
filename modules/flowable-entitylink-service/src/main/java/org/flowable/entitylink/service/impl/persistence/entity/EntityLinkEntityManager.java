@@ -30,6 +30,9 @@ public interface EntityLinkEntityManager extends EntityManager<EntityLinkEntity>
     
     List<EntityLink> findEntityLinksByReferenceScopeIdAndType(String referenceScopeId, String scopeType, String linkType);
 
+    EntityLink findEntityLinkByScopeAndReferenceScopeAndType(String scopeId, String scopeType, String referenceScopeId, String referenceScopeType,
+            String linkType);
+
     void deleteEntityLinksByScopeIdAndScopeType(String scopeId, String scopeType);
 
     void deleteEntityLinksByRootScopeIdAndType(String scopeId, String scopeType);

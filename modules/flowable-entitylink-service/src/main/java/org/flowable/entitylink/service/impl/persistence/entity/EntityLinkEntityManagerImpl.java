@@ -58,8 +58,10 @@ public class EntityLinkEntityManagerImpl
         return dataManager.findEntityLinksByReferenceScopeIdAndType(referenceScopeId, referenceScopeType, linkType);
     }
 
-    public void deleteEntityLink(EntityLinkEntity identityLink) {
-        delete(identityLink);
+    @Override
+    public EntityLinkEntity findEntityLinkByScopeAndReferenceScopeAndType(String scopeId, String scopeType, String referenceScopeId, String referenceScopeType,
+            String linkType) {
+        return dataManager.findEntityLinkByScopeAndReferenceScopeAndType(scopeId, scopeType, referenceScopeId, referenceScopeType, linkType);
     }
 
     @Override

@@ -33,6 +33,9 @@ public interface HistoricEntityLinkEntityManager extends EntityManager<HistoricE
 
     List<HistoricEntityLink> findHistoricEntityLinksByScopeDefinitionIdAndScopeType(String scopeDefinitionId, String scopeType, String linkType);
 
+    HistoricEntityLink findEntityLinkByScopeAndReferenceScopeAndType(String scopeId, String scopeType, String referenceScopeId,
+            String referenceScopeType, String linkType);
+
     void deleteHistoricEntityLinksByScopeIdAndScopeType(String scopeId, String scopeType);
     
     void deleteHistoricEntityLinksByScopeDefinitionIdAndScopeType(String scopeDefinitionId, String scopeType);

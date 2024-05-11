@@ -65,6 +65,12 @@ public class HistoricEntityLinkEntityManagerImpl
     }
 
     @Override
+    public HistoricEntityLink findEntityLinkByScopeAndReferenceScopeAndType(String scopeId, String scopeType, String referenceScopeId,
+            String referenceScopeType, String linkType) {
+        return dataManager.findEntityLinkByScopeAndReferenceScopeAndType(scopeId, scopeType, referenceScopeId, referenceScopeType, linkType);
+    }
+
+    @Override
     public void deleteHistoricEntityLinksByScopeIdAndScopeType(String scopeId, String scopeType) {
         dataManager.deleteHistoricEntityLinksByScopeIdAndType(scopeId, scopeType);
     }

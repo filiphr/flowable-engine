@@ -133,6 +133,15 @@
     select * from ${prefix}ACT_RU_ENTITYLINK
   </select>
 
+  <select id="selectEntityLinkByScopeAndReferenceScopeAndType" resultMap="entityLinkResultMap">
+      select *
+      from ${prefix}ACT_RU_ENTITYLINK
+      where
+          SCOPE_ID_ = #{scopeId} and SCOPE_TYPE_ = #{scopeType}
+        and REF_SCOPE_ID_ = #{referenceScopeId} and REF_SCOPE_TYPE_ = #{referenceScopeType}
+        and LINK_TYPE_ = #{linkType}
+  </select>
+
   <!-- If you change something in the select, then check the other DBs as well -->
   <select id="selectEntityLinksWithSameRootScopeByScopeIdAndType" resultMap="entityLinkResultMap">
     select RES.*

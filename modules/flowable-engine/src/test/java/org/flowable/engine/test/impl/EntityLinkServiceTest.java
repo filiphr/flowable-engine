@@ -214,6 +214,54 @@ public class EntityLinkServiceTest extends PluggableFlowableTestCase {
         });
     }
 
+    @Test
+    void testFindEntityByScopeAndReferenceScopeAndType() {
+        managementService.executeCommand(commandContext -> {
+            EntityLinkServiceConfiguration entityLinkServiceConfiguration = processEngineConfiguration.getEntityLinkServiceConfiguration();
+            EntityLinkService entityLinkService = entityLinkServiceConfiguration.getEntityLinkService();
+            HistoricEntityLinkService historicEntityLinkService = entityLinkServiceConfiguration.getHistoricEntityLinkService();
+            createEntityLinkWithScopeAndRefScopeAndType("1", ScopeTypes.BPMN, "1", ScopeTypes.CMMN, "test", entityLinkServiceConfiguration);
+            createEntityLinkWithScopeAndRefScopeAndType("1", ScopeTypes.BPMN, "1", ScopeTypes.CMMN, "other-test", entityLinkServiceConfiguration);
+            createEntityLinkWithScopeAndRefScopeAndType("1", ScopeTypes.BPMN, "2", ScopeTypes.CMMN, "test", entityLinkServiceConfiguration);
+            createEntityLinkWithScopeAndRefScopeAndType("2", ScopeTypes.BPMN, "1", ScopeTypes.CMMN, "test", entityLinkServiceConfiguration);
+            createEntityLinkWithScopeAndRefScopeAndType("1", ScopeTypes.CMMN, "1", ScopeTypes.BPMN, "some-test", entityLinkServiceConfiguration);
+
+            assertThat(entityLinkService.findEntityLinkByScopeAndReferenceScopeAndType("1", ScopeTypes.BPMN, "1", ScopeTypes.CMMN, "test")).isNotNull();
+            assertThat(historicEntityLinkService.findEntityLinkByScopeAndReferenceScopeAndType("1", ScopeTypes.BPMN, "1", ScopeTypes.CMMN, "test")).isNotNull();
+
+            assertThat(entityLinkService.findEntityLinkByScopeAndReferenceScopeAndType("1", ScopeTypes.BPMN, "1", ScopeTypes.CMMN, "dummy")).isNull();
+            assertThat(historicEntityLinkService.findEntityLinkByScopeAndReferenceScopeAndType("1", ScopeTypes.BPMN, "1", ScopeTypes.CMMN, "dummy")).isNull();
+            return null;
+        });
+
+        managementService.executeCommand(commandContext -> {
+            EntityLinkServiceConfiguration entityLinkServiceConfiguration = processEngineConfiguration.getEntityLinkServiceConfiguration();
+            EntityLinkService entityLinkService = entityLinkServiceConfiguration.getEntityLinkService();
+            HistoricEntityLinkService historicEntityLinkService = entityLinkServiceConfiguration.getHistoricEntityLinkService();
+            assertThat(entityLinkService.findEntityLinkByScopeAndReferenceScopeAndType("1", ScopeTypes.BPMN, "1", ScopeTypes.CMMN, "test")).isNotNull();
+            assertThat(historicEntityLinkService.findEntityLinkByScopeAndReferenceScopeAndType("1", ScopeTypes.BPMN, "1", ScopeTypes.CMMN, "test")).isNotNull();
+
+            assertThat(entityLinkService.findEntityLinkByScopeAndReferenceScopeAndType("1", ScopeTypes.BPMN, "1", ScopeTypes.CMMN, "dummy")).isNull();
+            assertThat(historicEntityLinkService.findEntityLinkByScopeAndReferenceScopeAndType("1", ScopeTypes.BPMN, "1", ScopeTypes.CMMN, "dummy")).isNull();
+
+            return null;
+        });
+
+        managementService.executeCommand(commandContext -> {
+            EntityLinkServiceConfiguration entityLinkServiceConfiguration = processEngineConfiguration.getEntityLinkServiceConfiguration();
+            EntityLinkService entityLinkService = entityLinkServiceConfiguration.getEntityLinkService();
+            entityLinkService.deleteEntityLinksByScopeIdAndType("1", ScopeTypes.BPMN);
+            entityLinkService.deleteEntityLinksByScopeIdAndType("2", ScopeTypes.BPMN);
+            entityLinkService.deleteEntityLinksByScopeIdAndType("1", ScopeTypes.CMMN);
+
+            HistoricEntityLinkService historicEntityLinkService = entityLinkServiceConfiguration.getHistoricEntityLinkService();
+            historicEntityLinkService.deleteHistoricEntityLinksByScopeIdAndScopeType("1", ScopeTypes.BPMN);
+            historicEntityLinkService.deleteHistoricEntityLinksByScopeIdAndScopeType("2", ScopeTypes.BPMN);
+            historicEntityLinkService.deleteHistoricEntityLinksByScopeIdAndScopeType("1", ScopeTypes.CMMN);
+            return null;
+        });
+    }
+
     protected List<EntityLink> findEntityLinksByScopeId(String scopeId) {
         return managementService.executeCommand(commandContext -> processEngineConfiguration.getEntityLinkServiceConfiguration().getEntityLinkService()
                 .findEntityLinksByScopeIdAndType(scopeId, ScopeTypes.BPMN, EntityLinkType.CHILD));
@@ -258,6 +306,28 @@ public class EntityLinkServiceTest extends PluggableFlowableTestCase {
         historicEntityLink.setReferenceScopeId(referenceId);
         historicEntityLink.setReferenceScopeType(ScopeTypes.BPMN);
         historicEntityLink.setHierarchyType(hierarchyType);
+        historicEntityLinkService.insertHistoricEntityLink(historicEntityLink, false);
+    }
+
+    protected void createEntityLinkWithScopeAndRefScopeAndType(String scopeId, String scopeType, String referenceScopeId, String referenceScopeType,
+            String linkType, EntityLinkServiceConfiguration entityLinkServiceConfiguration) {
+
+        EntityLinkService entityLinkService = entityLinkServiceConfiguration.getEntityLinkService();
+        EntityLinkEntity entityLink = (EntityLinkEntity) entityLinkService.createEntityLink();
+        entityLink.setScopeId(scopeId);
+        entityLink.setScopeType(scopeType);
+        entityLink.setReferenceScopeId(referenceScopeId);
+        entityLink.setReferenceScopeType(referenceScopeType);
+        entityLink.setLinkType(linkType);
+        entityLinkService.insertEntityLink(entityLink);
+
+        HistoricEntityLinkService historicEntityLinkService = entityLinkServiceConfiguration.getHistoricEntityLinkService();
+        HistoricEntityLinkEntity historicEntityLink = (HistoricEntityLinkEntity) historicEntityLinkService.createHistoricEntityLink();
+        historicEntityLink.setScopeId(scopeId);
+        historicEntityLink.setScopeType(scopeType);
+        historicEntityLink.setReferenceScopeId(referenceScopeId);
+        historicEntityLink.setReferenceScopeType(referenceScopeType);
+        historicEntityLink.setLinkType(linkType);
         historicEntityLinkService.insertHistoricEntityLink(historicEntityLink, false);
     }
 }

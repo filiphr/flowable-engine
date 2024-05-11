@@ -34,6 +34,9 @@ public interface HistoricEntityLinkService {
 
     List<HistoricEntityLink> findHistoricEntityLinksByScopeDefinitionIdAndScopeType(String scopeDefinitionId, String scopeType, String linkType);
 
+    HistoricEntityLink findEntityLinkByScopeAndReferenceScopeAndType(String scopeId, String scopeType, String referenceScopeId, String referenceScopeType,
+            String linkType);
+
     HistoricEntityLink createHistoricEntityLink();
     
     void insertHistoricEntityLink(HistoricEntityLink entityLink, boolean fireCreateEvent);

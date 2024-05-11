@@ -28,6 +28,9 @@ public interface EntityLinkService {
     List<EntityLink> findEntityLinksWithSameRootScopeForScopeIdAndScopeType(String scopeId, String scopeType, String linkType);
     
     List<EntityLink> findEntityLinksByReferenceScopeIdAndType(String referenceScopeId, String scopeType, String linkType);
+
+    EntityLink findEntityLinkByScopeAndReferenceScopeAndType(String scopeId, String scopeType, String referenceScopeId, String referenceScopeType,
+            String linkType);
     
     EntityLink createEntityLink();
     

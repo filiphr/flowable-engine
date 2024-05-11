@@ -18,12 +18,14 @@ import java.util.Map;
 
 import org.flowable.common.engine.impl.cfg.IdGenerator;
 import org.flowable.common.engine.impl.db.AbstractDataManager;
+import org.flowable.common.engine.impl.db.SingleCachedEntityMatcher;
 import org.flowable.common.engine.impl.persistence.cache.CachedEntityMatcher;
 import org.flowable.entitylink.api.EntityLink;
 import org.flowable.entitylink.service.EntityLinkServiceConfiguration;
 import org.flowable.entitylink.service.impl.persistence.entity.EntityLinkEntity;
 import org.flowable.entitylink.service.impl.persistence.entity.EntityLinkEntityImpl;
 import org.flowable.entitylink.service.impl.persistence.entity.data.EntityLinkDataManager;
+import org.flowable.entitylink.service.impl.persistence.entity.data.impl.cachematcher.EntityLinkByScopeAndReferenceScopeAndType;
 import org.flowable.entitylink.service.impl.persistence.entity.data.impl.cachematcher.EntityLinksByReferenceScopeIdAndTypeMatcher;
 import org.flowable.entitylink.service.impl.persistence.entity.data.impl.cachematcher.EntityLinksByRootScopeIdAndTypeMatcher;
 import org.flowable.entitylink.service.impl.persistence.entity.data.impl.cachematcher.EntityLinksByScopeIdAndTypeMatcher;
@@ -38,6 +40,7 @@ public class MybatisEntityLinkDataManager extends AbstractDataManager<EntityLink
     protected CachedEntityMatcher<EntityLinkEntity> entityLinksByRootScopeIdAndScopeTypeMatcher = new EntityLinksByRootScopeIdAndTypeMatcher();
     protected CachedEntityMatcher<EntityLinkEntity> entityLinksWithSameRootByScopeIdAndTypeMatcher = new EntityLinksWithSameRootScopeForScopeIdAndScopeTypeMatcher<>();
     protected CachedEntityMatcher<EntityLinkEntity> entityLinksByReferenceScopeIdAndTypeMatcher = new EntityLinksByReferenceScopeIdAndTypeMatcher();
+    protected SingleCachedEntityMatcher<EntityLinkEntity> entityLinkByScopeAndReferenceScopeAndType = new EntityLinkByScopeAndReferenceScopeAndType<>();
 
     protected EntityLinkServiceConfiguration entityLinkServiceConfiguration;
     
@@ -92,6 +95,18 @@ public class MybatisEntityLinkDataManager extends AbstractDataManager<EntityLink
         parameters.put("referenceScopeType", referenceScopeType);
         parameters.put("linkType", linkType);
         return (List) getList("selectEntityLinksByReferenceScopeIdAndType", parameters, entityLinksByReferenceScopeIdAndTypeMatcher, true);
+    }
+
+    @Override
+    public EntityLinkEntity findEntityLinkByScopeAndReferenceScopeAndType(String scopeId, String scopeType, String referenceScopeId, String referenceScopeType,
+            String linkType) {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put("scopeId", scopeId);
+        parameters.put("scopeType", scopeType);
+        parameters.put("referenceScopeId", referenceScopeId);
+        parameters.put("referenceScopeType", referenceScopeType);
+        parameters.put("linkType", linkType);
+        return getEntity("selectEntityLinkByScopeAndReferenceScopeAndType", parameters, entityLinkByScopeAndReferenceScopeAndType, true);
     }
 
     @Override

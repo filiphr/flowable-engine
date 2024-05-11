@@ -20,12 +20,14 @@ import java.util.Map;
 
 import org.flowable.common.engine.impl.cfg.IdGenerator;
 import org.flowable.common.engine.impl.db.AbstractDataManager;
+import org.flowable.common.engine.impl.db.SingleCachedEntityMatcher;
 import org.flowable.common.engine.impl.persistence.cache.CachedEntityMatcher;
 import org.flowable.entitylink.api.history.HistoricEntityLink;
 import org.flowable.entitylink.service.EntityLinkServiceConfiguration;
 import org.flowable.entitylink.service.impl.persistence.entity.HistoricEntityLinkEntity;
 import org.flowable.entitylink.service.impl.persistence.entity.HistoricEntityLinkEntityImpl;
 import org.flowable.entitylink.service.impl.persistence.entity.data.HistoricEntityLinkDataManager;
+import org.flowable.entitylink.service.impl.persistence.entity.data.impl.cachematcher.EntityLinkByScopeAndReferenceScopeAndType;
 import org.flowable.entitylink.service.impl.persistence.entity.data.impl.cachematcher.EntityLinksWithSameRootScopeForScopeIdAndScopeTypeMatcher;
 import org.flowable.entitylink.service.impl.persistence.entity.data.impl.cachematcher.HistoricEntityLinksByScopeIdAndTypeMatcher;
 
@@ -36,6 +38,7 @@ public class MybatisHistoricEntityLinkDataManager extends AbstractDataManager<Hi
 
     protected CachedEntityMatcher<HistoricEntityLinkEntity> historicEntityLinksByScopeIdAndTypeMatcher = new HistoricEntityLinksByScopeIdAndTypeMatcher();
     protected CachedEntityMatcher<HistoricEntityLinkEntity> entityLinksWithSameRootByScopeIdAndTypeMatcher = new EntityLinksWithSameRootScopeForScopeIdAndScopeTypeMatcher<>();
+    protected SingleCachedEntityMatcher<HistoricEntityLinkEntity> entityLinkByScopeAndReferenceScopeAndType = new EntityLinkByScopeAndReferenceScopeAndType<>();
 
     protected EntityLinkServiceConfiguration entityLinkServiceConfiguration;
     
@@ -114,6 +117,18 @@ public class MybatisHistoricEntityLinkDataManager extends AbstractDataManager<Hi
         return getDbSqlSession().selectList("selectHistoricEntityLinksByScopeDefinitionIdAndType", parameters);
     }
     
+    @Override
+    public HistoricEntityLink findEntityLinkByScopeAndReferenceScopeAndType(String scopeId, String scopeType, String referenceScopeId,
+            String referenceScopeType, String linkType) {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put("scopeId", scopeId);
+        parameters.put("scopeType", scopeType);
+        parameters.put("referenceScopeId", referenceScopeId);
+        parameters.put("referenceScopeType", referenceScopeType);
+        parameters.put("linkType", linkType);
+        return getEntity("selectHistoricEntityLinkByScopeAndReferenceScopeAndType", parameters, entityLinkByScopeAndReferenceScopeAndType, true);
+    }
+
     @Override
     public void deleteHistoricEntityLinksByScopeIdAndType(String scopeId, String scopeType) {
         Map<String, String> parameters = new HashMap<>();

@@ -153,6 +153,15 @@
     select * from ${prefix}ACT_HI_ENTITYLINK
   </select>
 
+  <select id="selectHistoricEntityLinkByScopeAndReferenceScopeAndType" resultMap="historicEntityLinkResultMap">
+      select *
+      from ${prefix}ACT_HI_ENTITYLINK
+      where
+          SCOPE_ID_ = #{scopeId} and SCOPE_TYPE_ = #{scopeType}
+        and REF_SCOPE_ID_ = #{referenceScopeId} and REF_SCOPE_TYPE_ = #{referenceScopeType}
+        and LINK_TYPE_ = #{linkType}
+  </select>
+
   <!-- If you change something in the select, then check the other DBs as well -->
   <select id="selectHistoricEntityLinksWithSameRootScopeByScopeIdAndType" resultMap="historicEntityLinkResultMap">
     select RES.*
