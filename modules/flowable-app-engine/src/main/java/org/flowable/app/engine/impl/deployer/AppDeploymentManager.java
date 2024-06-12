@@ -13,6 +13,8 @@
 
 package org.flowable.app.engine.impl.deployer;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -130,6 +132,13 @@ public class AppDeploymentManager {
         }
         
         deploymentEntityManager.deleteDeploymentAndRelatedData(deploymentId, cascade);
+
+        List<EngineDeployer> engineUnDeployers = new ArrayList<>(deployers);
+        engineUnDeployers.sort(Comparator.comparingInt(EngineDeployer::getUndeployOrder));
+
+        for (EngineDeployer deployer : engineUnDeployers) {
+            deployer.undeploy(deployment, cascade);
+        }
     }
 
     public List<EngineDeployer> getDeployers() {

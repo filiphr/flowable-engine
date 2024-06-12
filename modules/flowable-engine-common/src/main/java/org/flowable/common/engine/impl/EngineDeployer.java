@@ -21,5 +21,16 @@ import org.flowable.common.engine.api.repository.EngineDeployment;
  */
 public interface EngineDeployer {
 
+    int DEFAULT_UNDEPLOY_ORDER = 0;
+
     void deploy(EngineDeployment deployment, Map<String, Object> deploymentSettings);
+
+    default void undeploy(EngineDeployment parentDeployment, boolean cascade) {
+        throw new UnsupportedOperationException("Engine deployer " + getClass() + " does not support undeployment");
+    }
+
+    default int getUndeployOrder() {
+        return DEFAULT_UNDEPLOY_ORDER;
+    }
+
 }
