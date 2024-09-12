@@ -201,6 +201,13 @@ public class FlowableVersions {
         return matchingVersionIndex;
     }
 
+    public static FlowableVersion.VersionState getVersionStateForDbVersion(String dbVersion) {
+        int dbVersionIndex = FlowableVersions.getFlowableVersionIndexForDbVersion(dbVersion);
+        FlowableVersion currentVersion = FlowableVersions.FLOWABLE_VERSIONS.get(dbVersionIndex);
+
+        return new FlowableVersion.VersionState(currentVersion, FlowableVersions.FLOWABLE_VERSIONS.subList(dbVersionIndex + 1, FlowableVersions.FLOWABLE_VERSIONS.size()));
+    }
+
     public static boolean hasCamMigrationVersion(String version) {
         int index = findMatchingCamMigrationIndex(version);
         if (index >= 0) {

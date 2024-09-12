@@ -23,6 +23,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 
 import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.impl.FlowableVersion;
@@ -83,12 +84,17 @@ public abstract class AbstractSqlScriptBasedDbSchemaManager implements SchemaMan
     
     protected void dbSchemaUpgrade(final String component, final int currentDatabaseVersionsIndex, final String engineDbVersion) {
         FlowableVersion version = FlowableVersions.FLOWABLE_VERSIONS.get(currentDatabaseVersionsIndex);
-        String currentVersion = version.getMainVersion();
-        logger.info("upgrading flowable {} schema from {} to {}", component, currentVersion, FlowableVersions.CURRENT_VERSION);
+        dbSchemaUpgrade(component, new FlowableVersion.VersionState(version, FlowableVersions.FLOWABLE_VERSIONS.subList(currentDatabaseVersionsIndex + 1, FlowableVersions.FLOWABLE_VERSIONS.size())), engineDbVersion);
+    }
+
+    protected void dbSchemaUpgrade(String component, FlowableVersion.VersionState versionState, String engineDbVersion) {
+        String currentVersion = versionState.currentVersion().getMainVersion();
+        List<FlowableVersion> nextVersions = versionState.nextVersions();
+        logger.info("upgrading flowable {} schema from {} to {}", component, currentVersion, nextVersions.get(nextVersions.size() - 1).getMainVersion());
 
         // Actual execution of schema DDL SQL
-        for (int i = currentDatabaseVersionsIndex + 1; i < FlowableVersions.FLOWABLE_VERSIONS.size(); i++) {
-            String nextVersion = FlowableVersions.FLOWABLE_VERSIONS.get(i).getMainVersion();
+        for (FlowableVersion version : nextVersions) {
+            String nextVersion = version.getMainVersion();
 
             // Taking care of -SNAPSHOT version in development
             if (nextVersion.endsWith("-SNAPSHOT")) {

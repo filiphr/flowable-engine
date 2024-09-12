@@ -79,4 +79,6 @@ public class FlowableVersion {
         }
     }
 
+    public record VersionState(FlowableVersion currentVersion, List<FlowableVersion> nextVersions) {
+    }
 }

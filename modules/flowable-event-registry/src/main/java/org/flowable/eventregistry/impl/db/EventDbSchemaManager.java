@@ -16,6 +16,8 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.flowable.common.engine.impl.AbstractEngineConfiguration;
+import org.flowable.common.engine.impl.FlowableVersion;
+import org.flowable.common.engine.impl.FlowableVersions;
 import org.flowable.common.engine.impl.db.EngineSchemaManagerLockConfiguration;
 import org.flowable.common.engine.impl.db.EngineSqlScriptBasedDbSchemaManager;
 import org.flowable.eventregistry.impl.EventRegistryEngine;
@@ -69,6 +71,11 @@ public class EventDbSchemaManager extends EngineSqlScriptBasedDbSchemaManager {
             return changeLogVersionMap.get(changeLogVersion);
         }
         return "6.5.0.0";
+    }
+
+    @Override
+    protected FlowableVersion.VersionState getVersionStateForDbVersion(String dbVersion) {
+        return FlowableVersions.getVersionStateForDbVersion(dbVersion);
     }
 
     protected AbstractEngineConfiguration getEngineConfiguration() {

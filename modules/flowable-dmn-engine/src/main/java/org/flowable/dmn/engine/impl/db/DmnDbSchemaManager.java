@@ -16,6 +16,8 @@ package org.flowable.dmn.engine.impl.db;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.flowable.common.engine.impl.FlowableVersion;
+import org.flowable.common.engine.impl.FlowableVersions;
 import org.flowable.common.engine.impl.db.EngineSchemaManagerLockConfiguration;
 import org.flowable.common.engine.impl.db.EngineSqlScriptBasedDbSchemaManager;
 import org.flowable.dmn.engine.DmnEngine;
@@ -73,6 +75,11 @@ public class DmnDbSchemaManager extends EngineSqlScriptBasedDbSchemaManager {
             return changeLogVersionMap.get(changeLogVersion);
         }
         return "5.99.0.0";
+    }
+
+    @Override
+    protected FlowableVersion.VersionState getVersionStateForDbVersion(String dbVersion) {
+        return FlowableVersions.getVersionStateForDbVersion(dbVersion);
     }
 
     @Override

@@ -19,7 +19,7 @@ import java.sql.SQLException;
 import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.api.FlowableWrongDbException;
 import org.flowable.common.engine.api.lock.LockManager;
-import org.flowable.common.engine.impl.FlowableVersions;
+import org.flowable.common.engine.impl.FlowableVersion;
 
 public abstract class EngineSqlScriptBasedDbSchemaManager extends AbstractSqlScriptBasedDbSchemaManager {
 
@@ -42,6 +42,8 @@ public abstract class EngineSqlScriptBasedDbSchemaManager extends AbstractSqlScr
     protected abstract String getChangeLogTableName();
 
     protected abstract String getDbVersionForChangelogVersion(String changeLogVersion);
+
+    protected abstract FlowableVersion.VersionState getVersionStateForDbVersion(String dbVersion);
 
     @Override
     public void schemaCheckVersion() {
@@ -132,8 +134,6 @@ public abstract class EngineSqlScriptBasedDbSchemaManager extends AbstractSqlScr
 
     protected String schemaUpdateInLock() {
         String feedback = null;
-        boolean isUpgradeNeeded = false;
-        int matchingVersionIndex = -1;
 
         boolean isEngineTablePresent = isEngineTablePresent();
 
@@ -147,14 +147,15 @@ public abstract class EngineSqlScriptBasedDbSchemaManager extends AbstractSqlScr
             }
         }
 
+        FlowableVersion.VersionState versionState = null;
+
         if (isEngineTablePresent) {
-            matchingVersionIndex = FlowableVersions.getFlowableVersionIndexForDbVersion(dbVersion);
-            isUpgradeNeeded = (matchingVersionIndex != (FlowableVersions.FLOWABLE_VERSIONS.size() - 1));
+            versionState = getVersionStateForDbVersion(dbVersion);
         }
 
-        if (isUpgradeNeeded) {
+        if (versionState != null && !versionState.nextVersions().isEmpty()) {
             // Engine upgrade
-            dbSchemaUpgrade(context, matchingVersionIndex, dbVersion);
+            dbSchemaUpgrade(context, versionState, dbVersion);
             dbSchemaUpgraded(changeLogVersion);
 
             feedback = "upgraded Flowable from " + dbVersion + " to " + getEngineVersion();

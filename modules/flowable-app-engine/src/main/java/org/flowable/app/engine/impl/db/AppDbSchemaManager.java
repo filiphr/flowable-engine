@@ -17,6 +17,8 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.flowable.app.engine.AppEngine;
 import org.flowable.app.engine.impl.util.CommandContextUtil;
+import org.flowable.common.engine.impl.FlowableVersion;
+import org.flowable.common.engine.impl.FlowableVersions;
 import org.flowable.common.engine.impl.db.EngineSchemaManagerLockConfiguration;
 import org.flowable.common.engine.impl.db.EngineSqlScriptBasedDbSchemaManager;
 
@@ -65,6 +67,11 @@ public class AppDbSchemaManager extends EngineSqlScriptBasedDbSchemaManager {
             return changeLogVersionMap.get(changeLogVersion);
         }
         return "6.3.0.1";
+    }
+
+    @Override
+    protected FlowableVersion.VersionState getVersionStateForDbVersion(String dbVersion) {
+        return FlowableVersions.getVersionStateForDbVersion(dbVersion);
     }
 
     @Override
