@@ -27,15 +27,16 @@ import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.management.modelmbean.RequiredModelMBean;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /**
  * @author Saeid Mirzaei
  */
-
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class DefaultManagementAgentTest {
 
     @Mock
@@ -49,9 +50,8 @@ public class DefaultManagementAgentTest {
     ObjectName registeredObjectName;
     ManagementAgent agent;
 
-    @Before
+    @BeforeEach
     public void initMocks() throws MalformedObjectNameException {
-        MockitoAnnotations.initMocks(this);
         sourceObjectName = new ObjectName("domain", "key", "value");
         registeredObjectName = new ObjectName("domain", "key", "otherValue");
         JMXConfigurator jmxConfigurator = new JMXConfigurator();

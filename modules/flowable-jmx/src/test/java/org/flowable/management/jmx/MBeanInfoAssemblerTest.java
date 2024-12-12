@@ -14,6 +14,7 @@
 package org.flowable.management.jmx;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import javax.management.JMException;
 import javax.management.MBeanAttributeInfo;
@@ -28,7 +29,7 @@ import org.flowable.management.jmx.testMbeans.BadAttributeVoid;
 import org.flowable.management.jmx.testMbeans.BadInherited;
 import org.flowable.management.jmx.testMbeans.NotManagedMBean;
 import org.flowable.management.jmx.testMbeans.TestMbean;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Saeid Mirzaei
@@ -89,35 +90,41 @@ public class MBeanInfoAssemblerTest {
         assertThat(beanInfo.getOperations()).hasSize(3);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testAttributeGetterNameNotCapitial() throws JMException {
-        mbeanInfoAssembler.getMBeanInfo(new BadAttributeGetterNameNotCapital(), null, "someName");
+    @Test
+    public void testAttributeGetterNameNotCapitial() {
+        assertThatThrownBy(() -> mbeanInfoAssembler.getMBeanInfo(new BadAttributeGetterNameNotCapital(), null, "someName"))
+                .isInstanceOf(IllegalArgumentException.class);
 
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testAttributePOJONamingNoGetter() throws JMException {
-        mbeanInfoAssembler.getMBeanInfo(new BadAttributeNameNoGetterSetter(), null, "someName");
+    @Test
+    public void testAttributePOJONamingNoGetter() {
+        assertThatThrownBy(() -> mbeanInfoAssembler.getMBeanInfo(new BadAttributeNameNoGetterSetter(), null, "someName"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testAttributeSetterNameNotCapitial() throws JMException {
-        mbeanInfoAssembler.getMBeanInfo(new BadAttributeSetterNameNotCapital(), null, "someName");
+    @Test
+    public void testAttributeSetterNameNotCapitial() {
+        assertThatThrownBy(() -> mbeanInfoAssembler.getMBeanInfo(new BadAttributeSetterNameNotCapital(), null, "someName"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testAttributeHavingParameter() throws JMException {
-        mbeanInfoAssembler.getMBeanInfo(new BadAttributeGetterHavinParameter(), null, "someName");
+    @Test
+    public void testAttributeHavingParameter() {
+        assertThatThrownBy(() -> mbeanInfoAssembler.getMBeanInfo(new BadAttributeGetterHavinParameter(), null, "someName"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testAttributeSetterHavingResult() throws JMException {
-        mbeanInfoAssembler.getMBeanInfo(new BadAttributeSetterHavinReturn(), null, "someName");
+    @Test
+    public void testAttributeSetterHavingResult() {
+        assertThatThrownBy(() -> mbeanInfoAssembler.getMBeanInfo(new BadAttributeSetterHavinReturn(), null, "someName"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testAttributeVoid() throws JMException {
-        mbeanInfoAssembler.getMBeanInfo(new BadAttributeVoid(), null, "someName");
+    @Test
+    public void testAttributeVoid() {
+        assertThatThrownBy(() -> mbeanInfoAssembler.getMBeanInfo(new BadAttributeVoid(), null, "someName"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
