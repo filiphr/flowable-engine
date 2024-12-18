@@ -256,6 +256,8 @@ import org.flowable.common.engine.impl.persistence.deploy.DefaultDeploymentCache
 import org.flowable.common.engine.impl.persistence.deploy.DeploymentCache;
 import org.flowable.common.engine.impl.persistence.entity.TableDataManager;
 import org.flowable.common.engine.impl.scripting.BeansResolverFactory;
+import org.flowable.common.engine.impl.scripting.FlowableScriptEngine;
+import org.flowable.common.engine.impl.scripting.JSR223FlowableScriptEngine;
 import org.flowable.common.engine.impl.scripting.ResolverFactory;
 import org.flowable.common.engine.impl.scripting.ScriptBindingsFactory;
 import org.flowable.common.engine.impl.scripting.ScriptingEngines;
@@ -428,6 +430,7 @@ public class CmmnEngineConfiguration extends AbstractBuildableEngineConfiguratio
     protected int expressionTextLengthCacheLimit = -1; // negative value to have no max length
 
     // Scripting support
+    protected FlowableScriptEngine scriptEngine;
     protected ScriptingEngines scriptingEngines;
     protected ScriptBindingsFactory scriptBindingsFactory;
     protected List<ResolverFactory> resolverFactories;
@@ -1312,9 +1315,16 @@ public class CmmnEngineConfiguration extends AbstractBuildableEngineConfiguratio
     }
 
     protected void initScriptingEngines() {
+        initScriptEngine();
         if (scriptingEngines == null) {
-            scriptingEngines = new ScriptingEngines(scriptBindingsFactory);
+            scriptingEngines = new ScriptingEngines(scriptEngine, scriptBindingsFactory);
             scriptingEngines.setDefaultTraceEnhancer(new CmmnEngineScriptTraceEnhancer());
+        }
+    }
+
+    protected void initScriptEngine() {
+        if (scriptEngine == null) {
+            scriptEngine = new JSR223FlowableScriptEngine();
         }
     }
     
@@ -4209,6 +4219,17 @@ public class CmmnEngineConfiguration extends AbstractBuildableEngineConfiguratio
 
     public CmmnEngineConfiguration setTaskPostProcessor(TaskPostProcessor processor) {
         this.taskPostProcessor = processor;
+        return this;
+    }
+
+    @Override
+    public FlowableScriptEngine getScriptEngine() {
+        return scriptEngine;
+    }
+
+    @Override
+    public CmmnEngineConfiguration setScriptEngine(FlowableScriptEngine scriptEngine) {
+        this.scriptEngine = scriptEngine;
         return this;
     }
 
