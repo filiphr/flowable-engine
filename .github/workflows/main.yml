@@ -17,6 +17,10 @@ jobs:
         java: [17, 21]
     steps:
     - uses: actions/checkout@v4
+    - name: Setup Maven Develocity
+      uses: gradle/develocity-actions/setup-maven@v1.3
+      with:
+        add-pr-comment: false
     - uses: actions/setup-java@v3
       with:
         distribution: 'zulu'
