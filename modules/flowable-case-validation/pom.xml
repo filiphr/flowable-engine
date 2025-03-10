@@ -33,5 +33,10 @@
             <artifactId>flowable-cmmn-converter</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-reporting</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

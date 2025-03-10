@@ -1,0 +1,29 @@
+name: Generate Open Test Reports
+description: Generates Open Test Reports and attaches files
+
+inputs:
+  open-test-report-cli-version:
+    description: 'The version of the Open Test Report CLI to use'
+    required: false
+    default: '0.2.1'
+
+  report-artifact-name:
+    description: 'The name of the report to generate'
+    required: false
+    default: 'Open Test Report'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get Open Test Report CLI
+      run: ./mvnw --no-transfer-progress dependency:copy -Dartifact=org.opentest4j.reporting:open-test-reporting-cli:${{ inputs.open-test-report-cli-version }}:jar:standalone -Dmdep.stripVersion -Dmdep.stripClassifier
+      shell: sh
+    - name: Generate HTML Report
+      run: find . -regex '.*/target/open-test-report.xml' -exec java -jar target/dependency/open-test-reporting-cli.jar html-report --output open-test-report.html {} +
+      shell: sh
+    - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 #v4.6.1
+      with:
+        name: ${{ inputs.report-artifact-name }}
+        path: |
+          **/target/junit-jupiter/**
+          open-test-report.html
