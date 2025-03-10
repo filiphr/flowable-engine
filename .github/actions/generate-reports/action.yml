@@ -17,10 +17,10 @@ runs:
   steps:
     - name: Get Open Test Report CLI
       run: ./mvnw --no-transfer-progress dependency:copy -Dartifact=org.opentest4j.reporting:open-test-reporting-cli:${{ inputs.open-test-report-cli-version }}:jar:standalone -Dmdep.stripVersion -Dmdep.stripClassifier
-      shell: sh
+      shell: bash
     - name: Generate HTML Report
       run: find . -regex '.*/target/open-test-report.xml' -exec java -jar target/dependency/open-test-reporting-cli.jar html-report --output open-test-report.html {} +
-      shell: sh
+      shell: bash
     - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 #v4.6.1
       with:
         name: ${{ inputs.report-artifact-name }}
