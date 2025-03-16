@@ -18,6 +18,9 @@ runs:
     - name: Get Open Test Report CLI
       run: ./mvnw --no-transfer-progress dependency:copy -Dartifact=org.opentest4j.reporting:open-test-reporting-cli:${{ inputs.open-test-report-cli-version }}:jar:standalone -Dmdep.stripVersion -Dmdep.stripClassifier
       shell: bash
+    - name: List reports
+      run: find . -regex '.*/target/open-test-report.xml'
+      shell: bash
     - name: Generate HTML Report
       run: find . -regex '.*/target/open-test-report.xml' -exec java -jar target/dependency/open-test-reporting-cli.jar html-report --output open-test-report.html {} +
       shell: bash
