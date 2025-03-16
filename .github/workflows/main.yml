@@ -33,4 +33,5 @@ jobs:
     - name: Test
       run: ./mvnw verify -Pdistro,ui,errorLogging ${MAVEN_ARGS} -Dmaven.test.redirectTestOutputToFile=false
     - name: Generate Test Report
+      if: always()
       uses: ./.github/actions/generate-reports

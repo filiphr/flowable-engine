@@ -31,7 +31,7 @@
 		<native-build-tools-plugin.version>0.10.3</native-build-tools-plugin.version>
 
 		<junit.version>4.13.2</junit.version>
-		<junit.jupiter.version>5.10.3</junit.jupiter.version>
+		<junit.jupiter.version>5.12.1</junit.jupiter.version>
 		<hikari.version>5.1.0</hikari.version>
 		<maven.deploy.plugin.version>3.1.3</maven.deploy.plugin.version>
 		<maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
