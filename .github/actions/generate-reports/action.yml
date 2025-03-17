@@ -12,6 +12,11 @@ inputs:
     required: false
     default: 'Open Test Report'
 
+  report-java-distribution:
+    description: 'The Java distribution to use for the report generation'
+    required: false
+    default: 'temurin'
+
 runs:
   using: "composite"
   steps:
@@ -21,6 +26,12 @@ runs:
     - name: List reports
       run: find . -regex '.*/target/open-test-report.xml'
       shell: bash
+    - name: Configure Java 21 version for Open Test report
+      uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 #v4.7.0
+      with:
+        distribution: ${{ inputs.report-java-distribution }}
+        java-version: 21
+        overwrite-settings: 'false'
     - name: Generate HTML Report
       run: find . -regex '.*/target/open-test-report.xml' -exec java -jar target/dependency/open-test-reporting-cli.jar html-report --output open-test-report.html {} +
       shell: bash
