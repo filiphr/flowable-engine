@@ -36,4 +36,4 @@ jobs:
       if: always()
       uses: ./.github/actions/generate-reports
       with:
-        report-artifact-name: 'Open Test Report Java '${{ matrix.java }}
+        report-artifact-name: 'Open Test Report Java ${{ matrix.java }}'
