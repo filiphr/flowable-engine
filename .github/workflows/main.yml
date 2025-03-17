@@ -35,3 +35,5 @@ jobs:
     - name: Generate Test Report
       if: always()
       uses: ./.github/actions/generate-reports
+      with:
+        report-artifact-name: 'Open Test Report Java '${{ matrix.java }}
