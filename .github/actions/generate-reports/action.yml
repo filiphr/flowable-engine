@@ -1,0 +1,43 @@
+name: Generate Open Test Reports
+description: Generates Open Test Reports and attaches files
+
+inputs:
+  open-test-report-cli-version:
+    description: 'The version of the Open Test Report CLI to use'
+    required: false
+    default: '0.2.4'
+
+  report-artifact-name:
+    description: 'The name of the report to generate'
+    required: false
+    default: 'Open Test Report'
+
+  report-java-distribution:
+    description: 'The Java distribution to use for the report generation'
+    required: false
+    default: 'temurin'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get Open Test Report CLI
+      run: ./mvnw --no-transfer-progress dependency:copy -Dartifact=org.opentest4j.reporting:open-test-reporting-cli:${{ inputs.open-test-report-cli-version }}:jar:standalone -Dmdep.stripVersion -Dmdep.stripClassifier
+      shell: bash
+    - name: List reports
+      run: find . -regex '.*/target/open-test-report.xml'
+      shell: bash
+    - name: Configure Java 21 version for Open Test report
+      uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 #v4.7.0
+      with:
+        distribution: ${{ inputs.report-java-distribution }}
+        java-version: 21
+        overwrite-settings: 'false'
+    - name: Generate HTML Report
+      run: find . -regex '.*/target/open-test-report.xml' -exec java -jar target/dependency/open-test-reporting-cli.jar html-report --output open-test-report.html {} +
+      shell: bash
+    - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 #v4.6.1
+      with:
+        name: ${{ inputs.report-artifact-name }}
+        path: |
+          **/target/junit-jupiter/**
+          open-test-report.html

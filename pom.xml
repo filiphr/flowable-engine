@@ -545,6 +545,11 @@
 						<exclude>**/*TestCase.java</exclude>
 					</excludes>
 					<runOrder>alphabetical</runOrder>
+					<properties>
+						<configurationParameters>
+							junit.platform.reporting.open.xml.enabled = true
+						</configurationParameters>
+					</properties>
 				</configuration>
 			</plugin>
 			<plugin>

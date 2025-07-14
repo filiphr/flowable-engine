@@ -32,3 +32,8 @@ jobs:
       run: ./mvnw install ${MAVEN_ARGS} -DskipTests=true -Dmaven.javadoc.skip=true
     - name: Test
       run: ./mvnw verify -Pdistro,ui,errorLogging ${MAVEN_ARGS} -Dmaven.test.redirectTestOutputToFile=false
+    - name: Generate Test Report
+      if: always()
+      uses: ./.github/actions/generate-reports
+      with:
+        report-artifact-name: 'Open Test Report Java ${{ matrix.java }}'
