@@ -541,6 +541,11 @@
 					</excludes>
 					<runOrder>alphabetical</runOrder>
 					<rerunFailingTestsCount>5</rerunFailingTestsCount>
+					<properties>
+						<configurationParameters>
+							junit.platform.reporting.open.xml.enabled = true
+						</configurationParameters>
+					</properties>
 				</configuration>
 			</plugin>
 			<plugin>

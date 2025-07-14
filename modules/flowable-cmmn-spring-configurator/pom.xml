@@ -37,6 +37,11 @@
             <groupId>org.flowable</groupId>
             <artifactId>flowable-cmmn-engine-configurator</artifactId>
         </dependency>
+		<dependency>
+			<groupId>org.junit.platform</groupId>
+			<artifactId>junit-platform-reporting</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
