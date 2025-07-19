@@ -66,5 +66,5 @@ jobs:
         uses: actions/upload-artifact@v4
         if: ${{ failure() && steps.test.conclusion == 'failure' }}
         with:
-          name: surefire-test-reports-${{ matrix.mssql }}
+          name: surefire-test-reports-db2-${{ matrix.db2 }}
           path: '**/target/surefire-reports/*'
