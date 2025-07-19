@@ -41,7 +41,7 @@
 			Therefore, we are fixing it like this.
 		-->
 		<byte-buddy.version>1.14.19</byte-buddy.version>
-		<testcontainers.version>1.21.0</testcontainers.version>
+		<testcontainers.version>1.21.3</testcontainers.version>
 		<artemis.version>2.40.0</artemis.version>
 
 		<oracle.jdbc.version>23.7.0.25.01</oracle.jdbc.version>
