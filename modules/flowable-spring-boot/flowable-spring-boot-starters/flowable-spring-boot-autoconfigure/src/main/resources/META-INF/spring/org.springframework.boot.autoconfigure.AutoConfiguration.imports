@@ -3,6 +3,7 @@ org.flowable.spring.boot.EndpointAutoConfiguration
 org.flowable.spring.boot.RestApiAutoConfiguration
 org.flowable.spring.boot.app.AppEngineServicesAutoConfiguration
 org.flowable.spring.boot.app.AppEngineAutoConfiguration
+org.flowable.spring.boot.Jackson2AutoConfiguration
 org.flowable.spring.boot.ProcessEngineServicesAutoConfiguration
 org.flowable.spring.boot.ProcessEngineAutoConfiguration
 org.flowable.spring.boot.FlowableJpaAutoConfiguration

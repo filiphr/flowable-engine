@@ -58,6 +58,7 @@ public class FlowableDefaultPropertiesEnvironmentPostProcessorTest {
                 "Config resource 'class path resource [application.yml]' via location 'optional:classpath:/'",
                 "flowableDefaultConfig: [classpath:/flowable-default.properties]",
                 "flowableDefaultConfig: [classpath:/flowable-default.yml]",
+                "logCorrelation",
                 "applicationInfo"
             );
 
@@ -88,6 +89,7 @@ public class FlowableDefaultPropertiesEnvironmentPostProcessorTest {
                 "Config resource 'class path resource [application.yml]' via location 'optional:classpath:/'",
                 "flowableDefaultConfig: [classpath:/flowable-default.properties]",
                 "flowableDefaultConfig: [classpath:/flowable-default.yml]",
+                "logCorrelation",
                 "applicationInfo",
                 "defaultProperties"
             );

@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Base64;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -30,7 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.web.server.test.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -93,7 +94,7 @@ public class RestApiSecurityApplicationTest {
             }
 
             @Override
-            public void handleError(ClientHttpResponse clientHttpResponse) throws IOException {
+            public void handleError(URI url, HttpMethod method, ClientHttpResponse clientHttpResponse) throws IOException {
                 if (clientHttpResponse.getStatusCode() == HttpStatus.UNAUTHORIZED) {
                     latch401.countDown();
                 }
