@@ -25,7 +25,6 @@ import org.flowable.common.engine.impl.javax.el.ELContext;
 import org.flowable.common.engine.impl.javax.el.ELException;
 import org.flowable.common.engine.impl.javax.el.ExpressionFactory;
 import org.flowable.common.engine.impl.javax.el.ValueExpression;
-import org.junit.Assert;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledForJreRange;
@@ -91,7 +90,7 @@ class AstIdentifierTest extends BaseElTest {
                 } catch (ELException e) {
                     continue;
                 }
-                Assert.fail("Expected EL exception for [" + i + "], [" + (char) i + "]");
+                fail("Expected EL exception for [" + i + "], [" + (char) i + "]");
             }
         }
     }

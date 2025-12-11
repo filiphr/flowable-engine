@@ -18,6 +18,7 @@ package org.flowable.common.engine.impl.de.odysseus.el.tree.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.flowable.common.engine.impl.de.odysseus.el.tree.impl.Scanner.Symbol.AND;
+import static org.flowable.common.engine.impl.de.odysseus.el.tree.impl.Scanner.Symbol.ARROW;
 import static org.flowable.common.engine.impl.de.odysseus.el.tree.impl.Scanner.Symbol.COLON;
 import static org.flowable.common.engine.impl.de.odysseus.el.tree.impl.Scanner.Symbol.COMMA;
 import static org.flowable.common.engine.impl.de.odysseus.el.tree.impl.Scanner.Symbol.DIV;
@@ -187,6 +188,7 @@ class ScannerTest extends TestCase {
         assertThat(symbols("${!=}")).containsExactly(START_EVAL_DYNAMIC, NE, END_EVAL);
         assertThat(symbols("${>=}")).containsExactly(START_EVAL_DYNAMIC, GE, END_EVAL);
         assertThat(symbols("${>}")).containsExactly(START_EVAL_DYNAMIC, GT, END_EVAL);
+        assertThat(symbols("${->}")).containsExactly(START_EVAL_DYNAMIC, ARROW, END_EVAL);
 
         assertThatThrownBy(() -> symbols("${&)")).isInstanceOf(Scanner.ScanException.class);
         assertThatThrownBy(() -> symbols("${|)")).isInstanceOf(Scanner.ScanException.class);
