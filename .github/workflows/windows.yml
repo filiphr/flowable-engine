@@ -24,9 +24,11 @@ jobs:
       - name: Cache Maven Repository
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/flowable
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
       - name: Install
         # Need to do install first in order for the OSGi tests to work
         run: ./mvnw install %MAVEN_ARGS% -D skipTests=true -D maven.javadoc.skip=true

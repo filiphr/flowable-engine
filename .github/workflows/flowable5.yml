@@ -23,5 +23,11 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: 17
+    - name: Restore Maven Repository Cache
+      uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-maven-
     - name: Build and Test
       run: cd scripts && ./run-flowable5-tests.sh

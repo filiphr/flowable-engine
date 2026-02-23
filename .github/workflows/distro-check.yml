@@ -23,9 +23,11 @@ jobs:
     - name: Cache Maven Repository
       uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
       with:
-        path: ~/.m2
-        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-m2
+        path: |
+          ~/.m2/repository
+          !~/.m2/repository/org/flowable
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-maven-
     - name: Verify Distribution
       run: ./mvnw verify -Pdeploy ${MAVEN_ARGS} -T 1C -DskipTests=true -Dgpg.skip=true
     - name: Upload Distribution Artifact
