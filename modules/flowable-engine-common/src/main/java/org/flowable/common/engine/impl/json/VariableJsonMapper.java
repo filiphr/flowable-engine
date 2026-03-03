@@ -27,6 +27,14 @@ public interface VariableJsonMapper {
 
     Object transformToJsonNode(Object value);
 
+    /**
+     * Wraps a raw JSON node object (e.g., Jackson {@code JsonNode}) into a {@link FlowableJsonNode} abstraction.
+     *
+     * @param value the raw JSON node
+     * @return the wrapped node, or {@code null} if the value is {@code null}
+     */
+    FlowableJsonNode wrapJsonNode(Object value);
+
     FlowableObjectNode createObjectNode();
 
     FlowableArrayNode createArrayNode();

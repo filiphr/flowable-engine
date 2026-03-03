@@ -15,7 +15,9 @@ package org.flowable.engine.impl.runtime;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.api.FlowableIllegalArgumentException;
+import org.flowable.common.engine.api.variable.VariableTrace;
 import org.flowable.engine.impl.RuntimeServiceImpl;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.engine.runtime.ProcessInstanceBuilder;
@@ -55,6 +57,7 @@ public class ProcessInstanceBuilderImpl implements ProcessInstanceBuilder {
     protected FormInfo extraFormInfo;
     protected String extraFormOutcome;
     protected boolean fallbackToDefaultTenant;
+    protected VariableTrace variableTrace;
 
     public ProcessInstanceBuilderImpl(RuntimeServiceImpl runtimeService) {
         this.runtimeService = runtimeService;
@@ -261,12 +264,38 @@ public class ProcessInstanceBuilderImpl implements ProcessInstanceBuilder {
     }
 
     @Override
+    public ProcessInstanceBuilder variableTrace(VariableTrace variableTrace) {
+        this.variableTrace = variableTrace;
+        return this;
+    }
+
+    @Override
     public ProcessInstance start() {
+        if (this.variableTrace != null) {
+            try {
+                return ScopedValue.where(VariableTrace.CURRENT, this.variableTrace)
+                        .call(() -> runtimeService.startProcessInstance(this));
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new FlowableException("Unexpected exception during variable-traced process instance start", e);
+            }
+        }
         return runtimeService.startProcessInstance(this);
     }
 
     @Override
     public ProcessInstance startAsync() {
+        if (this.variableTrace != null) {
+            try {
+                return ScopedValue.where(VariableTrace.CURRENT, this.variableTrace)
+                        .call(() -> runtimeService.startProcessInstanceAsync(this));
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new FlowableException("Unexpected exception during variable-traced async process instance start", e);
+            }
+        }
         return runtimeService.startProcessInstanceAsync(this);
     }
 
@@ -371,6 +400,10 @@ public class ProcessInstanceBuilderImpl implements ProcessInstanceBuilder {
 
     public boolean isFallbackToDefaultTenant() {
         return fallbackToDefaultTenant;
+    }
+
+    public VariableTrace getVariableTrace() {
+        return variableTrace;
     }
 
 }

@@ -66,6 +66,8 @@ import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.api.delegate.event.FlowableEngineEventType;
 import org.flowable.common.engine.api.delegate.event.FlowableEventDispatcher;
 import org.flowable.common.engine.api.delegate.event.FlowableEventListener;
+import org.flowable.common.engine.api.variable.VariableTraceHandler;
+import org.flowable.common.engine.api.variable.VariableTracePredicate;
 import org.flowable.common.engine.api.engine.EngineLifecycleListener;
 import org.flowable.common.engine.api.lock.LockManager;
 import org.flowable.common.engine.impl.agenda.AgendaOperationExecutionListener;
@@ -95,6 +97,7 @@ import org.flowable.common.engine.impl.interceptor.CommandInterceptor;
 import org.flowable.common.engine.impl.interceptor.CrDbRetryInterceptor;
 import org.flowable.common.engine.impl.interceptor.DefaultCommandInvoker;
 import org.flowable.common.engine.impl.interceptor.LogInterceptor;
+import org.flowable.common.engine.impl.variabletrace.VariableTraceInterceptor;
 import org.flowable.common.engine.impl.interceptor.SessionFactory;
 import org.flowable.common.engine.impl.interceptor.TransactionContextInterceptor;
 import org.flowable.common.engine.impl.lock.LockManagerImpl;
@@ -260,6 +263,10 @@ public abstract class AbstractEngineConfiguration {
     protected List<EventDispatchAction> additionalEventDispatchActions;
 
     protected LoggingListener loggingListener;
+
+    protected VariableTraceHandler variableTraceHandler;
+    protected VariableTracePredicate variableTracePredicate;
+    protected boolean variableTracePersistenceEnabled;
 
     protected boolean transactionsExternallyManaged;
 
@@ -549,6 +556,9 @@ public abstract class AbstractEngineConfiguration {
     public void initCommandInterceptors() {
         if (commandInterceptors == null) {
             commandInterceptors = new ArrayList<>();
+            if (isVariableTraceEnabled()) {
+                commandInterceptors.add(new VariableTraceInterceptor(variableTraceHandler, variableTracePredicate));
+            }
             if (customPreCommandInterceptors != null) {
                 commandInterceptors.addAll(customPreCommandInterceptors);
             }
@@ -1901,6 +1911,34 @@ public abstract class AbstractEngineConfiguration {
 
     public void setLoggingListener(LoggingListener loggingListener) {
         this.loggingListener = loggingListener;
+    }
+
+    public boolean isVariableTraceEnabled() {
+        return variableTraceHandler != null || variableTracePersistenceEnabled;
+    }
+
+    public VariableTraceHandler getVariableTraceHandler() {
+        return variableTraceHandler;
+    }
+
+    public void setVariableTraceHandler(VariableTraceHandler variableTraceHandler) {
+        this.variableTraceHandler = variableTraceHandler;
+    }
+
+    public VariableTracePredicate getVariableTracePredicate() {
+        return variableTracePredicate;
+    }
+
+    public void setVariableTracePredicate(VariableTracePredicate variableTracePredicate) {
+        this.variableTracePredicate = variableTracePredicate;
+    }
+
+    public boolean isVariableTracePersistenceEnabled() {
+        return variableTracePersistenceEnabled;
+    }
+
+    public void setVariableTracePersistenceEnabled(boolean variableTracePersistenceEnabled) {
+        this.variableTracePersistenceEnabled = variableTracePersistenceEnabled;
     }
 
     public Clock getClock() {

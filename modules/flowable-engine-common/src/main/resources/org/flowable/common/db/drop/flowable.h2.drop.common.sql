@@ -108,6 +108,11 @@ drop index if exists ACT_IDX_HI_PROCVAR_NAME_TYPE;
 drop index if exists ACT_IDX_HI_VAR_SCOPE_ID_TYPE;
 drop index if exists ACT_IDX_HI_VAR_SUB_ID_TYPE;
 
+drop index if exists ACT_IDX_HI_VAR_TRACE_TRACE;
+drop index if exists ACT_IDX_HI_VAR_TRACE_TGT;
+
+drop table if exists ACT_HI_VAR_TRACE cascade constraints;
+
 
 drop table if exists ACT_GE_BYTEARRAY cascade constraints;
 drop table if exists ACT_GE_PROPERTY cascade constraints;

@@ -14,6 +14,8 @@ package org.flowable.task.api;
 
 import java.util.Map;
 
+import org.flowable.common.engine.api.variable.VariableTrace;
+
 /**
  * This builder is an alternative to using any of the complete methods on the TaskService.
  *
@@ -77,6 +79,16 @@ public interface TaskCompletionBuilder {
      * Sets an outcome for the form.
      */
     TaskCompletionBuilder outcome(String outcome);
+
+    /**
+     * Sets a {@link VariableTrace} to capture variable operations during the task completion.
+     * The trace is bound as a {@link ScopedValue} so all variable reads and writes
+     * during the command execution are recorded.
+     *
+     * @param variableTrace the trace to use for capturing variable operations
+     * @return the builder for method chaining
+     */
+    TaskCompletionBuilder variableTrace(VariableTrace variableTrace);
 
     /**
      * Completes the task.

@@ -17,6 +17,8 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.api.scope.ScopeTypes;
+import org.flowable.common.engine.api.variable.VariableTrace;
+import org.flowable.common.engine.api.variable.VariableTraceOperationType;
 import org.flowable.common.engine.impl.AbstractEngineConfiguration;
 import org.flowable.common.engine.impl.HasVariableServiceConfiguration;
 import org.flowable.common.engine.impl.context.Context;
@@ -53,8 +55,31 @@ public class TraceableObject<O, C> {
                 VariableServiceConfiguration variableServiceConfiguration = getVariableServiceConfiguration();
                 variableServiceConfiguration.getInternalHistoryVariableManager().recordVariableUpdate(
                         variableInstanceEntity, variableServiceConfiguration.getClock().getCurrentTime());
+
+                recordVariableTraceUpdate();
             }
         }
+    }
+
+    protected void recordVariableTraceUpdate() {
+        if (!VariableTrace.CURRENT.isBound()) {
+            return;
+        }
+        Object diff = type.computeTraceDiff(tracedObject, tracedObjectOriginalValue);
+        String scopeType = variableInstanceEntity.getScopeType();
+        String targetScopeId;
+        String targetScopeType;
+        if (StringUtils.isNotEmpty(scopeType)) {
+            targetScopeId = variableInstanceEntity.getScopeId();
+            targetScopeType = scopeType;
+        } else {
+            targetScopeId = variableInstanceEntity.getProcessInstanceId();
+            targetScopeType = ScopeTypes.BPMN;
+        }
+        VariableTrace.CURRENT.get().recordWrite(null,
+                targetScopeId, targetScopeType,
+                variableInstanceEntity.getName(), variableInstanceEntity.getTypeName(), diff,
+                VariableTraceOperationType.UPDATE, false);
     }
     
     protected VariableServiceConfiguration getVariableServiceConfiguration() {

@@ -719,6 +719,28 @@ public class PlanItemInstanceEntityImpl extends AbstractCmmnEngineVariableScopeE
         this.queryVariables = queryVariables;
     }
 
+    // Variable trace template method overrides
+
+    @Override
+    protected String getVariableTraceElementId() {
+        return getElementId();
+    }
+
+    @Override
+    protected String getVariableTraceScopeId() {
+        return getCaseInstanceId();
+    }
+
+    @Override
+    protected String getVariableTraceScopeType() {
+        return ScopeTypes.CMMN;
+    }
+
+    @Override
+    protected String getVariableTraceDefinitionId() {
+        return getCaseDefinitionId();
+    }
+
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();

@@ -58,6 +58,7 @@ import org.flowable.task.service.impl.persistence.entity.HistoricTaskInstanceEnt
 import org.flowable.task.service.impl.persistence.entity.HistoricTaskLogEntryEntityImpl;
 import org.flowable.task.service.impl.persistence.entity.TaskEntityImpl;
 import org.flowable.variable.service.impl.persistence.entity.HistoricVariableInstanceEntityImpl;
+import org.flowable.variable.service.impl.persistence.entity.VariableTraceEntityImpl;
 import org.flowable.variable.service.impl.persistence.entity.VariableInstanceEntityImpl;
 
 /**
@@ -215,6 +216,7 @@ public class EntityDependencyOrder {
         DELETE_ORDER.add(HistoricScopeInstanceEntityImpl.class);
 
         DELETE_ORDER.add(HistoricVariableInstanceEntityImpl.class);
+        DELETE_ORDER.add(VariableTraceEntityImpl.class);
 
         DELETE_ORDER.add(HistoricDetailAssignmentEntityImpl.class);
         DELETE_ORDER.add(HistoricDetailVariableInstanceUpdateEntityImpl.class);

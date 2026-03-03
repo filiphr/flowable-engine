@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:flowable="http://flowable.org/bpmn"
+  targetNamespace="http://www.flowable.org/processdef">
+
+  <process id="variableTraceDeleteProcess" isExecutable="true">
+
+    <startEvent id="theStart" />
+    <sequenceFlow sourceRef="theStart" targetRef="serviceTask1" />
+
+    <serviceTask id="serviceTask1" flowable:class="org.flowable.engine.test.api.variables.VariableTraceTest$ReadCreateAndDeleteDelegate" />
+    <sequenceFlow sourceRef="serviceTask1" targetRef="theEnd" />
+
+    <endEvent id="theEnd" />
+
+  </process>
+
+</definitions>

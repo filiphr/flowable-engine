@@ -26,4 +26,16 @@ public interface MutableVariableType<O, C> {
 
     boolean updateValueIfChanged(O originalObject, C originalObjectCopy, VariableInstanceEntity variableInstanceEntity);
 
+    /**
+     * Computes a diff between the current value and the original value for variable trace recording.
+     * Returns {@code null} if no meaningful diff can be computed.
+     *
+     * @param currentValue the current (possibly mutated) value
+     * @param originalValue the original copy of the value
+     * @return the diff representation, or {@code null}
+     */
+    default Object computeTraceDiff(O currentValue, C originalValue) {
+        return null;
+    }
+
 }

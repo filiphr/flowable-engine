@@ -29,6 +29,7 @@ import org.flowable.bpmn.model.FlowableListener;
 import org.flowable.bpmn.model.MultiInstanceLoopCharacteristics;
 import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.api.scope.ScopeTypes;
+import org.flowable.common.engine.api.variable.VariableTraceSourceContext;
 import org.flowable.common.engine.impl.context.Context;
 import org.flowable.common.engine.impl.db.SuspensionState;
 import org.flowable.common.engine.impl.history.HistoryLevel;
@@ -724,7 +725,12 @@ public class ExecutionEntityImpl extends AbstractBpmnEngineVariableScopeEntity i
     
     @Override
     public void setVariable(String variableName, Object value, boolean fetchAllVariables) {
-        setVariable(variableName, value, this, fetchAllVariables);
+        if (shouldBindVariableTraceSource()) {
+            ScopedValue.where(VariableTraceSourceContext.CURRENT, createVariableTraceSourceContext())
+                    .run(() -> setVariable(variableName, value, this, fetchAllVariables));
+        } else {
+            setVariable(variableName, value, this, fetchAllVariables);
+        }
     }
     
     @Override
@@ -808,6 +814,11 @@ public class ExecutionEntityImpl extends AbstractBpmnEngineVariableScopeEntity i
     
     @Override
     public Object setVariableLocal(String variableName, Object value, boolean fetchAllVariables) {
+        if (shouldBindVariableTraceSource()) {
+            ScopedValue.where(VariableTraceSourceContext.CURRENT, createVariableTraceSourceContext())
+                    .run(() -> setVariableLocal(variableName, value, this, fetchAllVariables));
+            return null;
+        }
         return setVariableLocal(variableName, value, this, fetchAllVariables);
     }
 
@@ -1542,6 +1553,29 @@ public class ExecutionEntityImpl extends AbstractBpmnEngineVariableScopeEntity i
     @Override
     protected VariableServiceConfiguration getVariableServiceConfiguration() {
         return CommandContextUtil.getProcessEngineConfiguration().getVariableServiceConfiguration();
+    }
+
+    // Variable trace template method overrides
+
+    @Override
+    protected String getVariableTraceElementId() {
+        FlowElement el = getCurrentFlowElement();
+        return el != null ? el.getId() : null;
+    }
+
+    @Override
+    protected String getVariableTraceScopeId() {
+        return getProcessInstanceId();
+    }
+
+    @Override
+    protected String getVariableTraceScopeType() {
+        return ScopeTypes.BPMN;
+    }
+
+    @Override
+    protected String getVariableTraceDefinitionId() {
+        return getProcessDefinitionId();
     }
 
 }

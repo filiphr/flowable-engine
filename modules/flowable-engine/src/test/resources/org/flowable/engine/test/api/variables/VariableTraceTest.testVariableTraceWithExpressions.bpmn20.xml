@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:flowable="http://flowable.org/bpmn"
+  targetNamespace="http://www.flowable.org/processdef">
+
+  <process id="variableTraceExpressionProcess" isExecutable="true">
+
+    <startEvent id="theStart" />
+    <sequenceFlow sourceRef="theStart" targetRef="serviceTask1" />
+
+    <!-- Expression-based service task: reads inputVar via expression, stores result in outputVar -->
+    <serviceTask id="serviceTask1"
+        flowable:expression="${inputVar.toUpperCase()}"
+        flowable:resultVariable="outputVar" />
+    <sequenceFlow sourceRef="serviceTask1" targetRef="exclusiveGw" />
+
+    <!-- Exclusive gateway with condition expressions -->
+    <exclusiveGateway id="exclusiveGw" />
+    <sequenceFlow sourceRef="exclusiveGw" targetRef="serviceTask2">
+      <conditionExpression>${outputVar == 'HELLO'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow sourceRef="exclusiveGw" targetRef="serviceTask3">
+      <conditionExpression>${outputVar != 'HELLO'}</conditionExpression>
+    </sequenceFlow>
+
+    <!-- Second expression task on the 'HELLO' path -->
+    <serviceTask id="serviceTask2"
+        flowable:expression="${outputVar.concat('_world')}"
+        flowable:resultVariable="finalVar" />
+    <sequenceFlow sourceRef="serviceTask2" targetRef="theEnd" />
+
+    <serviceTask id="serviceTask3"
+        flowable:expression="${'other'}"
+        flowable:resultVariable="finalVar" />
+    <sequenceFlow sourceRef="serviceTask3" targetRef="theEnd" />
+
+    <endEvent id="theEnd" />
+
+  </process>
+
+</definitions>

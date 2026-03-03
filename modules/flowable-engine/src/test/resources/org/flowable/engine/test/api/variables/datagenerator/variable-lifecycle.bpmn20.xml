@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:flowable="http://flowable.org/bpmn"
+  targetNamespace="http://www.flowable.org/processdef">
+
+  <process id="variableLifecycle" name="Variable Lifecycle" isExecutable="true">
+
+    <startEvent id="theStart" />
+    <sequenceFlow sourceRef="theStart" targetRef="createVariables" />
+
+    <serviceTask id="createVariables" name="Create Variables"
+        flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$VariableLifecycleDelegate" />
+    <sequenceFlow sourceRef="createVariables" targetRef="updateAndDelete" />
+
+    <serviceTask id="updateAndDelete" name="Update and Delete"
+        flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$UpdateAndDeleteDelegate" />
+    <sequenceFlow sourceRef="updateAndDelete" targetRef="theEnd" />
+
+    <endEvent id="theEnd" />
+
+  </process>
+
+</definitions>

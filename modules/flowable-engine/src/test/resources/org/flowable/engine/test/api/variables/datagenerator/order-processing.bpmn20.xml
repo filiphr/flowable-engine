@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:flowable="http://flowable.org/bpmn"
+  targetNamespace="http://www.flowable.org/processdef">
+
+  <process id="orderProcessing" name="Order Processing" isExecutable="true">
+
+    <startEvent id="theStart" />
+    <sequenceFlow sourceRef="theStart" targetRef="validateOrder" />
+
+    <serviceTask id="validateOrder" name="Validate Order"
+        flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$ValidateOrderDelegate" />
+    <sequenceFlow sourceRef="validateOrder" targetRef="orderGateway" />
+
+    <exclusiveGateway id="orderGateway" />
+
+    <sequenceFlow sourceRef="orderGateway" targetRef="applyDiscount">
+      <conditionExpression xsi:type="tFormalExpression">${orderCategory == 'high'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow sourceRef="orderGateway" targetRef="processPayment">
+      <conditionExpression xsi:type="tFormalExpression">${orderCategory == 'normal'}</conditionExpression>
+    </sequenceFlow>
+
+    <!-- High-value order path -->
+    <serviceTask id="applyDiscount" name="Apply Discount"
+        flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$ApplyDiscountDelegate" />
+    <sequenceFlow sourceRef="applyDiscount" targetRef="managerApproval" />
+
+    <userTask id="managerApproval" name="Manager Approval" />
+    <sequenceFlow sourceRef="managerApproval" targetRef="processPayment" />
+
+    <!-- Shared payment processing -->
+    <serviceTask id="processPayment" name="Process Payment"
+        flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$ProcessPaymentDelegate" />
+    <sequenceFlow sourceRef="processPayment" targetRef="theEnd" />
+
+    <endEvent id="theEnd" />
+
+  </process>
+
+</definitions>

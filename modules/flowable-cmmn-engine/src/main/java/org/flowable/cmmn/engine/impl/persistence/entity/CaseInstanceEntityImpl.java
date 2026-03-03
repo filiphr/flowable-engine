@@ -485,6 +485,28 @@ public class CaseInstanceEntityImpl extends AbstractCmmnEngineVariableScopeEntit
         this.caseDefinitionDeploymentId = caseDefinitionDeploymentId;
     }
 
+    // Variable trace template method overrides
+
+    @Override
+    protected String getVariableTraceElementId() {
+        return null; // case-level scope, no specific element
+    }
+
+    @Override
+    protected String getVariableTraceScopeId() {
+        return getId();
+    }
+
+    @Override
+    protected String getVariableTraceScopeType() {
+        return ScopeTypes.CMMN;
+    }
+
+    @Override
+    protected String getVariableTraceDefinitionId() {
+        return getCaseDefinitionId();
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

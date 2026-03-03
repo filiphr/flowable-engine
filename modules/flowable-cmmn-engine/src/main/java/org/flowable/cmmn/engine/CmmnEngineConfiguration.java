@@ -210,6 +210,7 @@ import org.flowable.common.engine.api.async.AsyncTaskExecutor;
 import org.flowable.common.engine.api.async.AsyncTaskInvoker;
 import org.flowable.common.engine.api.delegate.FlowableFunctionDelegate;
 import org.flowable.common.engine.api.scope.ScopeTypes;
+import org.flowable.common.engine.api.variable.VariableTraceHandler;
 import org.flowable.common.engine.impl.AbstractBuildableEngineConfiguration;
 import org.flowable.common.engine.impl.AbstractEngineConfiguration;
 import org.flowable.common.engine.impl.EngineConfigurator;
@@ -217,6 +218,7 @@ import org.flowable.common.engine.impl.EngineDeployer;
 import org.flowable.common.engine.impl.HasExpressionManagerEngineConfiguration;
 import org.flowable.common.engine.impl.HasVariableServiceConfiguration;
 import org.flowable.common.engine.impl.HasVariableTypes;
+import org.flowable.common.engine.impl.variabletrace.VariableTraceInterceptor;
 import org.flowable.common.engine.impl.ScriptingEngineAwareEngineConfiguration;
 import org.flowable.common.engine.impl.ServiceConfigurator;
 import org.flowable.common.engine.impl.agenda.AgendaFutureMaxWaitTimeoutProvider;
@@ -303,6 +305,7 @@ import org.flowable.task.service.history.InternalHistoryTaskManager;
 import org.flowable.task.service.impl.DefaultTaskPostProcessor;
 import org.flowable.task.service.impl.persistence.entity.HistoricTaskLogEntryEntityImpl;
 import org.flowable.variable.api.types.VariableType;
+import org.flowable.variable.service.impl.variabletrace.DbVariableTraceHandler;
 import org.flowable.variable.api.types.VariableTypes;
 import org.flowable.variable.service.VariableServiceConfiguration;
 import org.flowable.variable.service.history.InternalHistoryVariableManager;
@@ -793,6 +796,7 @@ public class CmmnEngineConfiguration extends AbstractBuildableEngineConfiguratio
         initEntityLinkServiceConfiguration();
         initEventSubscriptionServiceConfiguration();
         initVariableServiceConfiguration();
+        initDbVariableTraceHandler();
         initTaskServiceConfiguration();
         initBusinessCalendarManager();
         initJobHandlers();
@@ -1494,6 +1498,37 @@ public class CmmnEngineConfiguration extends AbstractBuildableEngineConfiguratio
 
     protected VariableServiceConfiguration instantiateVariableServiceConfiguration() {
         return new VariableServiceConfiguration(ScopeTypes.CMMN);
+    }
+
+    public void initDbVariableTraceHandler() {
+        if (!isVariableTracePersistenceEnabled()) {
+            return;
+        }
+
+        DbVariableTraceHandler dbHandler = new DbVariableTraceHandler(
+                commandExecutor,
+                variableServiceConfiguration.getVariableTraceEntityManager(),
+                objectMapper);
+
+        // Compose with user-supplied handler if present
+        VariableTraceHandler effectiveHandler;
+        if (variableTraceHandler != null) {
+            VariableTraceHandler userHandler = variableTraceHandler;
+            effectiveHandler = trace -> {
+                dbHandler.handle(trace);
+                userHandler.handle(trace);
+            };
+        } else {
+            effectiveHandler = dbHandler;
+        }
+
+        // Wire into the already-created interceptor
+        for (CommandInterceptor interceptor : commandInterceptors) {
+            if (interceptor instanceof VariableTraceInterceptor vti) {
+                vti.setHandler(effectiveHandler);
+                break;
+            }
+        }
     }
 
     public void initTaskServiceConfiguration() {

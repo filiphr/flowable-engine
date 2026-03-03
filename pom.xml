@@ -14,7 +14,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<distributionManagementSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</distributionManagementSnapshotsUrl>
-		<jdk.version>17</jdk.version>
+		<jdk.version>25</jdk.version>
 
         <!-- Plugin versions, see also flowable-dependencies -->
 		<central-publishing-maven-plugin.version>0.8.0</central-publishing-maven-plugin.version>

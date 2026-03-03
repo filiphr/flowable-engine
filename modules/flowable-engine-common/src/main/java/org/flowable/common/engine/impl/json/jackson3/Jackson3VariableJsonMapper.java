@@ -13,6 +13,7 @@
 package org.flowable.common.engine.impl.json.jackson3;
 
 import org.flowable.common.engine.impl.json.FlowableArrayNode;
+import org.flowable.common.engine.impl.json.FlowableJsonNode;
 import org.flowable.common.engine.impl.json.FlowableObjectNode;
 import org.flowable.common.engine.impl.json.VariableJsonMapper;
 
@@ -53,6 +54,11 @@ public class Jackson3VariableJsonMapper implements VariableJsonMapper {
     @Override
     public Object transformToJsonNode(Object value) {
         return FlowableJackson3JsonNode.asJsonNode(value, () -> objectMapper);
+    }
+
+    @Override
+    public FlowableJsonNode wrapJsonNode(Object value) {
+        return FlowableJackson3JsonNode.wrap((JsonNode) value);
     }
 
     @Override

@@ -25,10 +25,14 @@ import org.flowable.variable.service.impl.persistence.entity.HistoricVariableIns
 import org.flowable.variable.service.impl.persistence.entity.HistoricVariableInstanceEntityManagerImpl;
 import org.flowable.variable.service.impl.persistence.entity.VariableInstanceEntityManager;
 import org.flowable.variable.service.impl.persistence.entity.VariableInstanceEntityManagerImpl;
+import org.flowable.variable.service.impl.persistence.entity.VariableTraceEntityManager;
+import org.flowable.variable.service.impl.persistence.entity.VariableTraceEntityManagerImpl;
 import org.flowable.variable.service.impl.persistence.entity.data.HistoricVariableInstanceDataManager;
 import org.flowable.variable.service.impl.persistence.entity.data.VariableInstanceDataManager;
+import org.flowable.variable.service.impl.persistence.entity.data.VariableTraceDataManager;
 import org.flowable.variable.service.impl.persistence.entity.data.impl.MybatisHistoricVariableInstanceDataManager;
 import org.flowable.variable.service.impl.persistence.entity.data.impl.MybatisVariableInstanceDataManager;
+import org.flowable.variable.service.impl.persistence.entity.data.impl.MybatisVariableTraceDataManager;
 
 /**
  * @author Tijs Rademakers
@@ -48,11 +52,13 @@ public class VariableServiceConfiguration extends AbstractServiceConfiguration<V
 
     protected VariableInstanceDataManager variableInstanceDataManager;
     protected HistoricVariableInstanceDataManager historicVariableInstanceDataManager;
+    protected VariableTraceDataManager variableTraceDataManager;
 
     // ENTITY MANAGERS /////////////////////////////////////////////////
 
     protected VariableInstanceEntityManager variableInstanceEntityManager;
     protected HistoricVariableInstanceEntityManager historicVariableInstanceEntityManager;
+    protected VariableTraceEntityManager variableTraceEntityManager;
     protected VariableTypes variableTypes;
     protected InternalHistoryVariableManager internalHistoryVariableManager;
     protected ExpressionManager expressionManager;
@@ -103,6 +109,9 @@ public class VariableServiceConfiguration extends AbstractServiceConfiguration<V
         if (historicVariableInstanceDataManager == null) {
             historicVariableInstanceDataManager = new MybatisHistoricVariableInstanceDataManager(this);
         }
+        if (variableTraceDataManager == null) {
+            variableTraceDataManager = new MybatisVariableTraceDataManager(this);
+        }
     }
 
     public void initEntityManagers() {
@@ -111,6 +120,9 @@ public class VariableServiceConfiguration extends AbstractServiceConfiguration<V
         }
         if (historicVariableInstanceEntityManager == null) {
             historicVariableInstanceEntityManager = new HistoricVariableInstanceEntityManagerImpl(this, historicVariableInstanceDataManager);
+        }
+        if (variableTraceEntityManager == null) {
+            variableTraceEntityManager = new VariableTraceEntityManagerImpl(this, variableTraceDataManager);
         }
     }
 
@@ -248,5 +260,23 @@ public class VariableServiceConfiguration extends AbstractServiceConfiguration<V
 
     public void setVariableInstanceValueModifier(VariableInstanceValueModifier variableInstanceValueModifier) {
         this.variableInstanceValueModifier = variableInstanceValueModifier;
+    }
+
+    public VariableTraceDataManager getVariableTraceDataManager() {
+        return variableTraceDataManager;
+    }
+
+    public VariableServiceConfiguration setVariableTraceDataManager(VariableTraceDataManager variableTraceDataManager) {
+        this.variableTraceDataManager = variableTraceDataManager;
+        return this;
+    }
+
+    public VariableTraceEntityManager getVariableTraceEntityManager() {
+        return variableTraceEntityManager;
+    }
+
+    public VariableServiceConfiguration setVariableTraceEntityManager(VariableTraceEntityManager variableTraceEntityManager) {
+        this.variableTraceEntityManager = variableTraceEntityManager;
+        return this;
     }
 }

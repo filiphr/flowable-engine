@@ -147,6 +147,11 @@ drop index ACT_IDX_HI_VAR_SUB_ID_TYPE;
 
 drop table ACT_HI_VARINST;
 
+drop index ACT_IDX_HI_VAR_TRACE_TRACE;
+drop index ACT_IDX_HI_VAR_TRACE_TGT;
+
+drop table ACT_HI_VAR_TRACE;
+
 drop table ACT_GE_BYTEARRAY;
 drop table ACT_GE_PROPERTY;
 

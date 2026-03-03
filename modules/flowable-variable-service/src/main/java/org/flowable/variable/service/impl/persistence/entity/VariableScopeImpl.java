@@ -23,6 +23,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.flowable.common.engine.api.FlowableException;
+import org.flowable.common.engine.api.variable.VariableTrace;
+import org.flowable.common.engine.api.variable.VariableTraceOperationType;
+import org.flowable.common.engine.api.variable.VariableTraceSourceContext;
 import org.flowable.common.engine.api.delegate.event.FlowableEngineEventType;
 import org.flowable.common.engine.impl.context.Context;
 import org.flowable.common.engine.impl.interceptor.CommandContext;
@@ -248,6 +251,16 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
 
     @Override
     public Object getVariable(String variableName) {
+        if (shouldBindVariableTraceSource()) {
+            try {
+                return ScopedValue.where(VariableTraceSourceContext.CURRENT, createVariableTraceSourceContext())
+                        .call(() -> getVariable(variableName, true));
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new FlowableException("Unexpected exception during variable trace", e);
+            }
+        }
         return getVariable(variableName, true);
     }
 
@@ -279,18 +292,23 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
 
         // Transient variable
         if (transientVariables != null && transientVariables.containsKey(variableName)) {
-            return transientVariables.get(variableName);
+            VariableInstance transientVar = transientVariables.get(variableName);
+            recordVariableTraceRead(variableName, transientVar.getTypeName(), null, true);
+            return transientVar;
         }
 
         // Check the local single-fetch cache
         if (usedVariablesCache.containsKey(variableName)) {
-            return usedVariablesCache.get(variableName);
+            VariableInstanceEntity cachedVar = usedVariablesCache.get(variableName);
+            recordVariableTraceRead(variableName, cachedVar.getTypeName(), cachedVar.getValue(), false);
+            return cachedVar;
         }
 
         if (fetchAllVariables) {
             ensureVariableInstancesInitialized();
             VariableInstanceEntity variableInstance = variableInstances.get(variableName);
             if (variableInstance != null) {
+                recordVariableTraceRead(variableName, variableInstance.getTypeName(), variableInstance.getValue(), false);
                 return variableInstance;
             }
 
@@ -303,12 +321,15 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
         } else {
 
             if (variableInstances != null && variableInstances.containsKey(variableName)) {
-                return variableInstances.get(variableName);
+                VariableInstanceEntity variableInstance = variableInstances.get(variableName);
+                recordVariableTraceRead(variableName, variableInstance.getTypeName(), variableInstance.getValue(), false);
+                return variableInstance;
             }
 
             VariableInstanceEntity variable = getSpecificVariable(variableName);
             if (variable != null) {
                 usedVariablesCache.put(variableName, variable);
+                recordVariableTraceRead(variableName, variable.getTypeName(), variable.getValue(), false);
                 return variable;
             }
 
@@ -326,6 +347,16 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
 
     @Override
     public Object getVariableLocal(String variableName) {
+        if (shouldBindVariableTraceSource()) {
+            try {
+                return ScopedValue.where(VariableTraceSourceContext.CURRENT, createVariableTraceSourceContext())
+                        .call(() -> getVariableLocal(variableName, true));
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new FlowableException("Unexpected exception during variable trace", e);
+            }
+        }
         return getVariableLocal(variableName, true);
     }
 
@@ -348,11 +379,15 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
     public VariableInstance getVariableInstanceLocal(String variableName, boolean fetchAllVariables) {
 
         if (transientVariables != null && transientVariables.containsKey(variableName)) {
-            return transientVariables.get(variableName);
+            VariableInstance transientVar = transientVariables.get(variableName);
+            recordVariableTraceRead(variableName, transientVar.getTypeName(), null, true);
+            return transientVar;
         }
 
         if (usedVariablesCache.containsKey(variableName)) {
-            return usedVariablesCache.get(variableName);
+            VariableInstanceEntity cachedVar = usedVariablesCache.get(variableName);
+            recordVariableTraceRead(variableName, cachedVar.getTypeName(), cachedVar.getValue(), false);
+            return cachedVar;
         }
 
         if (fetchAllVariables) {
@@ -361,6 +396,7 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
 
             VariableInstanceEntity variableInstance = variableInstances.get(variableName);
             if (variableInstance != null) {
+                recordVariableTraceRead(variableName, variableInstance.getTypeName(), variableInstance.getValue(), false);
                 return variableInstance;
             }
 
@@ -369,6 +405,7 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
             if (variableInstances != null && variableInstances.containsKey(variableName)) {
                 VariableInstanceEntity variable = variableInstances.get(variableName);
                 if (variable != null) {
+                    recordVariableTraceRead(variableName, variable.getTypeName(), variable.getValue(), false);
                     return variableInstances.get(variableName);
                 }
             }
@@ -376,6 +413,7 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
             VariableInstanceEntity variable = getSpecificVariable(variableName);
             if (variable != null) {
                 usedVariablesCache.put(variableName, variable);
+                recordVariableTraceRead(variableName, variable.getTypeName(), variable.getValue(), false);
                 return variable;
             }
 
@@ -650,6 +688,15 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
 
     @Override
     public void setVariable(String variableName, Object value) {
+        if (shouldBindVariableTraceSource()) {
+            ScopedValue.where(VariableTraceSourceContext.CURRENT, createVariableTraceSourceContext())
+                    .run(() -> doSetVariable(variableName, value));
+        } else {
+            doSetVariable(variableName, value);
+        }
+    }
+
+    protected void doSetVariable(String variableName, Object value) {
         if (isExpression(variableName)) {
             getVariableServiceConfiguration().getExpressionManager().
                     createExpression(variableName).
@@ -667,6 +714,15 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
      */
     @Override
     public void setVariable(String variableName, Object value, boolean fetchAllVariables) {
+        if (shouldBindVariableTraceSource()) {
+            ScopedValue.where(VariableTraceSourceContext.CURRENT, createVariableTraceSourceContext())
+                    .run(() -> doSetVariableWithFetch(variableName, value, fetchAllVariables));
+            return;
+        }
+        doSetVariableWithFetch(variableName, value, fetchAllVariables);
+    }
+
+    protected void doSetVariableWithFetch(String variableName, Object value, boolean fetchAllVariables) {
 
         if (fetchAllVariables) {
 
@@ -730,6 +786,11 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
 
     @Override
     public Object setVariableLocal(String variableName, Object value) {
+        if (shouldBindVariableTraceSource()) {
+            ScopedValue.where(VariableTraceSourceContext.CURRENT, createVariableTraceSourceContext())
+                    .run(() -> setVariableLocal(variableName, value, true));
+            return null;
+        }
         return setVariableLocal(variableName, value, true);
     }
 
@@ -799,6 +860,15 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
 
     @Override
     public void removeVariable(String variableName) {
+        if (shouldBindVariableTraceSource()) {
+            ScopedValue.where(VariableTraceSourceContext.CURRENT, createVariableTraceSourceContext())
+                    .run(() -> doRemoveVariable(variableName));
+        } else {
+            doRemoveVariable(variableName);
+        }
+    }
+
+    protected void doRemoveVariable(String variableName) {
         ensureVariableInstancesInitialized();
         if (variableInstances.containsKey(variableName)) {
             removeVariableLocal(variableName);
@@ -840,6 +910,8 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
                     .recordVariableRemoved(variableInstance, variableServiceConfiguration.getClock().getCurrentTime());
             }
         }
+
+        recordVariableTraceWrite(variableInstance.getName(), variableInstance.getTypeName(), null, VariableTraceOperationType.DELETE);
     }
 
     protected void updateVariableInstance(VariableInstanceEntity variableInstance, Object newVariableValue) {
@@ -872,6 +944,8 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
                     variableServiceConfiguration.getObjectMapper());
             LoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_VARIABLE_UPDATE, loggingNode, variableServiceConfiguration.getEngineName());
         }
+
+        recordVariableTraceWrite(variableInstance.getName(), variableInstance.getTypeName(), newVariableValue, VariableTraceOperationType.UPDATE);
     }
 
     protected VariableInstanceEntity createVariableInstance(String variableName, Object value) {
@@ -907,6 +981,9 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
             addLoggingSessionInfo(loggingNode);
             LoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_VARIABLE_CREATE, loggingNode, variableServiceConfiguration.getEngineName());
         }
+
+        recordVariableTraceWrite(variableName, variableInstance.getTypeName(), value, VariableTraceOperationType.CREATE);
+
         return variableInstance;
     }
 
@@ -927,6 +1004,15 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
 
     @Override
     public void setTransientVariableLocal(String variableName, Object variableValue) {
+        if (shouldBindVariableTraceSource()) {
+            ScopedValue.where(VariableTraceSourceContext.CURRENT, createVariableTraceSourceContext())
+                    .run(() -> doSetTransientVariableLocal(variableName, variableValue));
+        } else {
+            doSetTransientVariableLocal(variableName, variableValue);
+        }
+    }
+
+    protected void doSetTransientVariableLocal(String variableName, Object variableValue) {
         if (transientVariables == null) {
             transientVariables = new HashMap<>();
         }
@@ -934,7 +1020,10 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
         TransientVariableInstance transientVariableInstance = new TransientVariableInstance(variableName, null);
         initializeVariableInstanceBackPointer(transientVariableInstance);
         variableValueModifier.setVariableValue(transientVariableInstance, variableValue, getTenantId());
+        boolean isNew = !transientVariables.containsKey(variableName);
         transientVariables.put(variableName, transientVariableInstance);
+
+        recordVariableTraceTransientWrite(variableName, isNew ? VariableTraceOperationType.CREATE : VariableTraceOperationType.UPDATE);
     }
 
     @Override
@@ -946,6 +1035,15 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
 
     @Override
     public void setTransientVariable(String variableName, Object variableValue) {
+        if (shouldBindVariableTraceSource()) {
+            ScopedValue.where(VariableTraceSourceContext.CURRENT, createVariableTraceSourceContext())
+                    .run(() -> doSetTransientVariable(variableName, variableValue));
+        } else {
+            doSetTransientVariable(variableName, variableValue);
+        }
+    }
+
+    protected void doSetTransientVariable(String variableName, Object variableValue) {
         VariableScopeImpl parentVariableScope = getParentVariableScope();
         if (parentVariableScope != null) {
             parentVariableScope.setTransientVariable(variableName, variableValue);
@@ -956,7 +1054,22 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
 
     @Override
     public Object getTransientVariableLocal(String variableName) {
+        if (shouldBindVariableTraceSource()) {
+            try {
+                return ScopedValue.where(VariableTraceSourceContext.CURRENT, createVariableTraceSourceContext())
+                        .call(() -> doGetTransientVariableLocal(variableName));
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new FlowableException("Unexpected exception during variable trace", e);
+            }
+        }
+        return doGetTransientVariableLocal(variableName);
+    }
+
+    protected Object doGetTransientVariableLocal(String variableName) {
         if (transientVariables != null && transientVariables.containsKey(variableName)) {
+            recordVariableTraceRead(variableName, "transient", null, true);
             return transientVariables.get(variableName).getValue();
         }
         return null;
@@ -977,7 +1090,22 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
 
     @Override
     public Object getTransientVariable(String variableName) {
+        if (shouldBindVariableTraceSource()) {
+            try {
+                return ScopedValue.where(VariableTraceSourceContext.CURRENT, createVariableTraceSourceContext())
+                        .call(() -> doGetTransientVariable(variableName));
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new FlowableException("Unexpected exception during variable trace", e);
+            }
+        }
+        return doGetTransientVariable(variableName);
+    }
+
+    protected Object doGetTransientVariable(String variableName) {
         if (transientVariables != null && transientVariables.containsKey(variableName)) {
+            recordVariableTraceRead(variableName, "transient", null, true);
             return transientVariables.get(variableName).getValue();
         }
 
@@ -1012,7 +1140,9 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
     @Override
     public void removeTransientVariableLocal(String variableName) {
         if (transientVariables != null) {
-            transientVariables.remove(variableName);
+            if (transientVariables.remove(variableName) != null) {
+                recordVariableTraceTransientWrite(variableName, VariableTraceOperationType.DELETE);
+            }
         }
     }
 
@@ -1025,6 +1155,15 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
 
     @Override
     public void removeTransientVariable(String variableName) {
+        if (shouldBindVariableTraceSource()) {
+            ScopedValue.where(VariableTraceSourceContext.CURRENT, createVariableTraceSourceContext())
+                    .run(() -> doRemoveTransientVariable(variableName));
+        } else {
+            doRemoveTransientVariable(variableName);
+        }
+    }
+
+    protected void doRemoveTransientVariable(String variableName) {
         if (transientVariables != null && transientVariables.containsKey(variableName)) {
             removeTransientVariableLocal(variableName);
             return;
@@ -1074,6 +1213,71 @@ public abstract class VariableScopeImpl extends AbstractEntity implements Serial
 
     protected boolean isExpression(String variableName) {
         return variableName.startsWith("${") || variableName.startsWith("#{");
+    }
+
+    // Variable trace template methods
+    // //////////////////////////////////////////////////////
+
+    protected String getVariableTraceElementId() {
+        return null;
+    }
+
+    protected String getVariableTraceScopeId() {
+        return null;
+    }
+
+    protected String getVariableTraceScopeType() {
+        return null;
+    }
+
+    protected String getVariableTraceDefinitionId() {
+        return null;
+    }
+
+    protected VariableTraceSourceContext createVariableTraceSourceContext() {
+        return new VariableTraceSourceContext(
+                getVariableTraceElementId(),
+                getVariableTraceScopeId(),
+                getVariableTraceScopeType(),
+                getVariableTraceDefinitionId());
+    }
+
+    protected boolean isVariableTraceBound() {
+        return VariableTrace.CURRENT.isBound();
+    }
+
+    protected boolean shouldBindVariableTraceSource() {
+        return isVariableTraceBound() && !VariableTraceSourceContext.CURRENT.isBound();
+    }
+
+    protected void recordVariableTraceRead(String variableName, String variableType, Object value, boolean transientVariable) {
+        if (isVariableTraceBound()) {
+            VariableTraceSourceContext source = VariableTraceSourceContext.CURRENT.isBound()
+                    ? VariableTraceSourceContext.CURRENT.get() : null;
+            VariableTrace.CURRENT.get().recordRead(source,
+                    getVariableTraceScopeId(), getVariableTraceScopeType(),
+                    variableName, variableType, value, transientVariable);
+        }
+    }
+
+    protected void recordVariableTraceWrite(String variableName, String variableType, Object value, VariableTraceOperationType operationType) {
+        if (isVariableTraceBound()) {
+            VariableTraceSourceContext source = VariableTraceSourceContext.CURRENT.isBound()
+                    ? VariableTraceSourceContext.CURRENT.get() : null;
+            VariableTrace.CURRENT.get().recordWrite(source,
+                    getVariableTraceScopeId(), getVariableTraceScopeType(),
+                    variableName, variableType, value, operationType, false);
+        }
+    }
+
+    protected void recordVariableTraceTransientWrite(String variableName, VariableTraceOperationType operationType) {
+        if (isVariableTraceBound()) {
+            VariableTraceSourceContext source = VariableTraceSourceContext.CURRENT.isBound()
+                    ? VariableTraceSourceContext.CURRENT.get() : null;
+            VariableTrace.CURRENT.get().recordWrite(source,
+                    getVariableTraceScopeId(), getVariableTraceScopeType(),
+                    variableName, "transient", null, operationType, true);
+        }
     }
 
 }

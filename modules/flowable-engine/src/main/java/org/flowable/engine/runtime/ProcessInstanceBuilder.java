@@ -16,6 +16,7 @@ import java.util.Map;
 
 import org.flowable.common.engine.api.FlowableIllegalArgumentException;
 import org.flowable.common.engine.api.FlowableObjectNotFoundException;
+import org.flowable.common.engine.api.variable.VariableTrace;
 import org.flowable.form.api.FormInfo;
 
 /**
@@ -178,6 +179,16 @@ public interface ProcessInstanceBuilder {
      * Use default tenant as a fallback in the case when process definition was not found by key and tenant id
      */
     ProcessInstanceBuilder fallbackToDefaultTenant();
+
+    /**
+     * Sets a {@link VariableTrace} to capture variable operations during process instance startup.
+     * The trace is bound as a {@link ScopedValue} so all variable reads and writes
+     * during the command execution are recorded.
+     *
+     * @param variableTrace the trace to use for capturing variable operations
+     * @return the builder for method chaining
+     */
+    ProcessInstanceBuilder variableTrace(VariableTrace variableTrace);
 
     /**
      * Start the process instance

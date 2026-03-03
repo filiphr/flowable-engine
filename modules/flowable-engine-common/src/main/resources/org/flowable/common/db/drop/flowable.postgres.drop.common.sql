@@ -23,6 +23,7 @@ drop table if exists ACT_HI_TASKINST cascade;
 
 drop table if exists ACT_RU_VARIABLE cascade;
 drop table if exists ACT_HI_VARINST cascade;
+drop table if exists ACT_HI_VAR_TRACE cascade;
 
 
 drop table if exists ACT_GE_BYTEARRAY cascade;

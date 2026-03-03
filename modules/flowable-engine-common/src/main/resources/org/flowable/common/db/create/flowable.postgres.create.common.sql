@@ -574,6 +574,28 @@ create index ACT_IDX_HI_PROCVAR_NAME_TYPE on ACT_HI_VARINST(NAME_, VAR_TYPE_);
 create index ACT_IDX_HI_VAR_SCOPE_ID_TYPE on ACT_HI_VARINST(SCOPE_ID_, SCOPE_TYPE_);
 create index ACT_IDX_HI_VAR_SUB_ID_TYPE on ACT_HI_VARINST(SUB_SCOPE_ID_, SCOPE_TYPE_);
 
+create table ACT_HI_VAR_TRACE (
+    ID_ varchar(64) not null,
+    TRACE_ID_ varchar(64) not null,
+    SEQ_ bigint not null,
+    TIME_STAMP_ timestamp not null,
+    OPERATION_TYPE_ varchar(10) not null,
+    VAR_NAME_ varchar(255) not null,
+    VAR_TYPE_ varchar(100),
+    VALUE_TEXT_ varchar(4000),
+    TRANSIENT_ boolean not null,
+    SRC_ELEMENT_ID_ varchar(255),
+    SRC_SCOPE_ID_ varchar(255),
+    SRC_SCOPE_TYPE_ varchar(64),
+    SRC_DEF_ID_ varchar(255),
+    TGT_SCOPE_ID_ varchar(255),
+    TGT_SCOPE_TYPE_ varchar(64),
+    primary key (ID_)
+);
+
+create index ACT_IDX_HI_VAR_TRACE_TRACE on ACT_HI_VAR_TRACE(TRACE_ID_);
+create index ACT_IDX_HI_VAR_TRACE_TGT on ACT_HI_VAR_TRACE(TGT_SCOPE_ID_, TGT_SCOPE_TYPE_);
+
 
 create table ACT_RU_EVENT_SUBSCR (
     ID_ varchar(64) not null,

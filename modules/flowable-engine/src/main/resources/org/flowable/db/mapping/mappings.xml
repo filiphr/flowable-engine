@@ -33,6 +33,7 @@
         <mapper resource="org/flowable/db/mapping/entity/HistoricDetail.xml" />
         <mapper resource="org/flowable/db/mapping/entity/HistoricProcessInstance.xml" />
         <mapper resource="org/flowable/variable/service/db/mapping/entity/HistoricVariableInstance.xml" />
+        <mapper resource="org/flowable/variable/service/db/mapping/entity/VariableTrace.xml" />
         <mapper resource="org/flowable/task/service/db/mapping/entity/HistoricTaskInstance.xml" />
         <mapper resource="org/flowable/task/service/db/mapping/entity/HistoricTaskLogEntry.xml" />
         <mapper resource="org/flowable/identitylink/service/db/mapping/entity/HistoricIdentityLink.xml" />

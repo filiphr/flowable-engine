@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:flowable="http://flowable.org/bpmn"
+  targetNamespace="http://www.flowable.org/processdef">
+
+  <process id="batchProcessing" name="Batch Processing" isExecutable="true">
+
+    <startEvent id="theStart" />
+    <sequenceFlow sourceRef="theStart" targetRef="processItems" />
+
+    <serviceTask id="processItems" name="Process Items"
+        flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$ProcessItemDelegate">
+      <multiInstanceLoopCharacteristics isSequential="true"
+          flowable:collection="${itemList}"
+          flowable:elementVariable="item" />
+    </serviceTask>
+    <sequenceFlow sourceRef="processItems" targetRef="aggregateResults" />
+
+    <serviceTask id="aggregateResults" name="Aggregate Results"
+        flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$AggregateResultsDelegate" />
+    <sequenceFlow sourceRef="aggregateResults" targetRef="theEnd" />
+
+    <endEvent id="theEnd" />
+
+  </process>
+
+</definitions>

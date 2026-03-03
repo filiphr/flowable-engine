@@ -13,8 +13,12 @@
 package org.flowable.variable.service.impl.types;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.flowable.common.engine.api.scope.ScopeTypes;
@@ -23,6 +27,7 @@ import org.flowable.common.engine.impl.HasVariableServiceConfiguration;
 import org.flowable.common.engine.impl.context.Context;
 import org.flowable.common.engine.impl.interceptor.CommandContext;
 import org.flowable.common.engine.impl.interceptor.EngineConfigurationConstants;
+import org.flowable.common.engine.impl.json.FlowableJsonNode;
 import org.flowable.common.engine.impl.json.VariableJsonMapper;
 import org.flowable.common.engine.impl.variable.NoopVariableLengthVerifier;
 import org.flowable.common.engine.impl.variable.VariableLengthVerifier;
@@ -157,6 +162,126 @@ public class JsonType implements VariableType, MutableVariableType<Object, Objec
             valueChanged = true;
         }
         return valueChanged;
+    }
+
+    @Override
+    public Object computeTraceDiff(Object currentValue, Object originalValue) {
+        if (!jsonMapper.isJsonNode(currentValue) || !jsonMapper.isJsonNode(originalValue)) {
+            return currentValue;
+        }
+        FlowableJsonNode current = jsonMapper.wrapJsonNode(currentValue);
+        FlowableJsonNode original = jsonMapper.wrapJsonNode(originalValue);
+        if (current == null || original == null) {
+            return currentValue;
+        }
+        return computeNodeDiff(original, current);
+    }
+
+    protected static Object computeNodeDiff(FlowableJsonNode original, FlowableJsonNode current) {
+        boolean originalIsObject = "OBJECT".equals(original.getNodeType());
+        boolean currentIsObject = "OBJECT".equals(current.getNodeType());
+
+        if (originalIsObject && currentIsObject) {
+            return computeObjectDiff(original, current);
+        }
+
+        boolean originalIsArray = "ARRAY".equals(original.getNodeType());
+        boolean currentIsArray = "ARRAY".equals(current.getNodeType());
+
+        if (originalIsArray && currentIsArray) {
+            return computeArrayDiff(original, current);
+        }
+
+        // Type mismatch or both are value nodes — return old/new
+        return Map.of("old", extractValue(original), "new", extractValue(current));
+    }
+
+    protected static Map<String, Object> computeObjectDiff(FlowableJsonNode original, FlowableJsonNode current) {
+        Set<String> allKeys = new LinkedHashSet<>();
+        allKeys.addAll(original.propertyNames());
+        allKeys.addAll(current.propertyNames());
+
+        Map<String, Object> added = new LinkedHashMap<>();
+        Map<String, Object> changed = new LinkedHashMap<>();
+        Map<String, Object> removed = new LinkedHashMap<>();
+
+        Collection<String> originalKeys = original.propertyNames();
+        Collection<String> currentKeys = current.propertyNames();
+
+        for (String key : allKeys) {
+            boolean inOriginal = originalKeys.contains(key);
+            boolean inCurrent = currentKeys.contains(key);
+
+            if (inOriginal && !inCurrent) {
+                removed.put(key, extractValue(original.get(key)));
+            } else if (!inOriginal && inCurrent) {
+                added.put(key, extractValue(current.get(key)));
+            } else {
+                // Both present — compare
+                FlowableJsonNode origChild = original.get(key);
+                FlowableJsonNode currChild = current.get(key);
+                if (!Objects.equals(origChild.getImplementationValue(), currChild.getImplementationValue())) {
+                    boolean origIsObject = "OBJECT".equals(origChild.getNodeType());
+                    boolean currIsObject = "OBJECT".equals(currChild.getNodeType());
+                    if (origIsObject && currIsObject) {
+                        changed.put(key, computeObjectDiff(origChild, currChild));
+                    } else {
+                        changed.put(key, computeNodeDiff(origChild, currChild));
+                    }
+                }
+            }
+        }
+
+        Map<String, Object> diff = new LinkedHashMap<>();
+        if (!added.isEmpty()) {
+            diff.put("added", added);
+        }
+        if (!changed.isEmpty()) {
+            diff.put("changed", changed);
+        }
+        if (!removed.isEmpty()) {
+            diff.put("removed", removed);
+        }
+        return diff;
+    }
+
+    protected static Map<String, Object> computeArrayDiff(FlowableJsonNode original, FlowableJsonNode current) {
+        // For arrays, provide a simple old/new representation
+        // Element-level diffing is complex and can be added later
+        Map<String, Object> diff = new LinkedHashMap<>();
+        diff.put("old", extractValue(original));
+        diff.put("new", extractValue(current));
+        return diff;
+    }
+
+    protected static Object extractValue(FlowableJsonNode node) {
+        if (node == null || node.isNull() || node.isMissingNode()) {
+            return null;
+        }
+        if (node.isString()) {
+            return node.asString();
+        }
+        if (node.isBoolean()) {
+            return node.booleanValue();
+        }
+        if (node.isNumber()) {
+            return node.numberValue();
+        }
+        if ("OBJECT".equals(node.getNodeType())) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            for (String key : node.propertyNames()) {
+                map.put(key, extractValue(node.get(key)));
+            }
+            return map;
+        }
+        if ("ARRAY".equals(node.getNodeType())) {
+            Object[] arr = new Object[node.size()];
+            for (int i = 0; i < node.size(); i++) {
+                arr[i] = extractValue(node.get(i));
+            }
+            return java.util.List.of(arr);
+        }
+        return node.asString();
     }
 
     protected void traceValue(Object value, ValueFields valueFields) {

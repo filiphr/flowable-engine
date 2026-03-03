@@ -17,6 +17,8 @@ import java.util.Map;
 
 import org.flowable.cmmn.engine.impl.cmd.CompleteTaskCmd;
 import org.flowable.cmmn.engine.impl.cmd.CompleteTaskWithFormCmd;
+import org.flowable.common.engine.api.FlowableException;
+import org.flowable.common.engine.api.variable.VariableTrace;
 import org.flowable.common.engine.impl.interceptor.CommandExecutor;
 import org.flowable.task.api.TaskCompletionBuilder;
 
@@ -32,6 +34,8 @@ public class TaskCompletionBuilderImpl implements TaskCompletionBuilder {
     protected String taskId;
     protected String formDefinitionId;
     protected String outcome;
+
+    protected VariableTrace variableTrace;
 
     protected Map<String, Object> variables;
     protected Map<String, Object> variablesLocal;
@@ -120,6 +124,12 @@ public class TaskCompletionBuilderImpl implements TaskCompletionBuilder {
         return this;
     }
 
+    @Override
+    public TaskCompletionBuilder variableTrace(VariableTrace variableTrace) {
+        this.variableTrace = variableTrace;
+        return this;
+    }
+
     protected void completeTask() {
         this.commandExecutor.execute(new CompleteTaskCmd(this.taskId, variables, variablesLocal, transientVariables, transientVariablesLocal));
     }
@@ -131,6 +141,24 @@ public class TaskCompletionBuilderImpl implements TaskCompletionBuilder {
 
     @Override
     public void complete() {
+        if (this.variableTrace != null) {
+            try {
+                ScopedValue.where(VariableTrace.CURRENT, this.variableTrace)
+                        .call(() -> {
+                            doComplete();
+                            return null;
+                        });
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new FlowableException("Unexpected exception during variable-traced task completion", e);
+            }
+        } else {
+            doComplete();
+        }
+    }
+
+    protected void doComplete() {
         if (this.formDefinitionId != null) {
             completeTaskWithForm();
         } else {

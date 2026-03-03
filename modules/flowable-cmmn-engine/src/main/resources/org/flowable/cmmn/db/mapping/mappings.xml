@@ -46,6 +46,7 @@
     <!-- Variable support -->
     <mapper resource="org/flowable/variable/service/db/mapping/entity/VariableInstance.xml" />
     <mapper resource="org/flowable/variable/service/db/mapping/entity/HistoricVariableInstance.xml" />
+    <mapper resource="org/flowable/variable/service/db/mapping/entity/VariableTrace.xml" />
     
     <!-- Identity link support -->
     <mapper resource="org/flowable/identitylink/service/db/mapping/entity/IdentityLink.xml" />
