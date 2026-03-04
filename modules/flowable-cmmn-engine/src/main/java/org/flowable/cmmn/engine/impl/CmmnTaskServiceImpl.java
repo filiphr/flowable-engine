@@ -52,6 +52,7 @@ import org.flowable.cmmn.engine.impl.cmd.SuspendTaskCmd;
 import org.flowable.cmmn.engine.impl.task.TaskCompletionBuilderImpl;
 import org.flowable.common.engine.api.FlowableIllegalArgumentException;
 import org.flowable.common.engine.impl.service.CommonEngineServiceImpl;
+import org.flowable.common.engine.impl.variabletrace.VariableTraceHelper;
 import org.flowable.form.api.FormInfo;
 import org.flowable.identitylink.api.IdentityLink;
 import org.flowable.identitylink.api.IdentityLinkType;
@@ -118,76 +119,76 @@ public class CmmnTaskServiceImpl extends CommonEngineServiceImpl<CmmnEngineConfi
 
     @Override
     public void complete(String taskId) {
-        commandExecutor.execute(new CompleteTaskCmd(taskId, null, null));
+        withAutoTrace(() -> commandExecutor.execute(new CompleteTaskCmd(taskId, null, null)));
     }
-    
+
     @Override
     public void complete(String taskId, String userId) {
-        commandExecutor.execute(new CompleteTaskCmd(taskId, userId, null, null));
+        withAutoTrace(() -> commandExecutor.execute(new CompleteTaskCmd(taskId, userId, null, null)));
     }
 
     @Override
     public void complete(String taskId, Map<String, Object> variables) {
-        commandExecutor.execute(new CompleteTaskCmd(taskId, variables, null));        
+        withAutoTrace(() -> commandExecutor.execute(new CompleteTaskCmd(taskId, variables, null)));
     }
-    
+
     @Override
     public void complete(String taskId, String userId, Map<String, Object> variables) {
-        commandExecutor.execute(new CompleteTaskCmd(taskId, userId, variables, null));        
+        withAutoTrace(() -> commandExecutor.execute(new CompleteTaskCmd(taskId, userId, variables, null)));
     }
 
     @Override
     public void complete(String taskId, Map<String, Object> variables, Map<String, Object> transientVariables) {
-        commandExecutor.execute(new CompleteTaskCmd(taskId, variables, transientVariables));        
+        withAutoTrace(() -> commandExecutor.execute(new CompleteTaskCmd(taskId, variables, transientVariables)));
     }
-    
+
     @Override
     public void complete(String taskId, String userId, Map<String, Object> variables, Map<String, Object> transientVariables) {
-        commandExecutor.execute(new CompleteTaskCmd(taskId, userId, variables, transientVariables));        
+        withAutoTrace(() -> commandExecutor.execute(new CompleteTaskCmd(taskId, userId, variables, transientVariables)));
     }
-    
+
     @Override
     public void completeTaskWithForm(String taskId, String formDefinitionId, String outcome, Map<String, Object> variables) {
-        commandExecutor.execute(new CompleteTaskWithFormCmd(taskId, formDefinitionId, outcome, variables));
+        withAutoTrace(() -> commandExecutor.execute(new CompleteTaskWithFormCmd(taskId, formDefinitionId, outcome, variables)));
     }
-    
+
     @Override
     public void completeTaskWithForm(String taskId, String formDefinitionId, String outcome, String userId, Map<String, Object> variables) {
-        commandExecutor.execute(new CompleteTaskWithFormCmd(taskId, formDefinitionId, outcome, userId, variables));
+        withAutoTrace(() -> commandExecutor.execute(new CompleteTaskWithFormCmd(taskId, formDefinitionId, outcome, userId, variables)));
     }
 
     @Override
     public void completeTaskWithForm(String taskId, String formDefinitionId, String outcome,
             Map<String, Object> variables, Map<String, Object> transientVariables) {
 
-        commandExecutor.execute(new CompleteTaskWithFormCmd(taskId, formDefinitionId, outcome, variables, transientVariables));
+        withAutoTrace(() -> commandExecutor.execute(new CompleteTaskWithFormCmd(taskId, formDefinitionId, outcome, variables, transientVariables)));
     }
-    
+
     @Override
     public void completeTaskWithForm(String taskId, String formDefinitionId, String outcome,
             String userId, Map<String, Object> variables, Map<String, Object> transientVariables) {
 
-        commandExecutor.execute(new CompleteTaskWithFormCmd(taskId, formDefinitionId, outcome, 
-                userId, variables, transientVariables));
+        withAutoTrace(() -> commandExecutor.execute(new CompleteTaskWithFormCmd(taskId, formDefinitionId, outcome,
+                userId, variables, transientVariables)));
     }
 
     @Override
     public void completeTaskWithForm(String taskId, String formDefinitionId, String outcome,
             Map<String, Object> variables, boolean localScope) {
 
-        commandExecutor.execute(new CompleteTaskWithFormCmd(taskId, formDefinitionId, outcome, variables, localScope));
+        withAutoTrace(() -> commandExecutor.execute(new CompleteTaskWithFormCmd(taskId, formDefinitionId, outcome, variables, localScope)));
     }
-    
+
     @Override
     public void completeTaskWithForm(String taskId, String formDefinitionId, String outcome,
             String userId, Map<String, Object> variables, boolean localScope) {
 
-        commandExecutor.execute(new CompleteTaskWithFormCmd(taskId, formDefinitionId, outcome, userId, variables, localScope));
+        withAutoTrace(() -> commandExecutor.execute(new CompleteTaskWithFormCmd(taskId, formDefinitionId, outcome, userId, variables, localScope)));
     }
     
     @Override
     public TaskCompletionBuilder createTaskCompletionBuilder() {
-        return new TaskCompletionBuilderImpl(commandExecutor);
+        return new TaskCompletionBuilderImpl(commandExecutor, configuration.getVariableTraceHelper());
     }
     
     @Override
@@ -333,7 +334,7 @@ public class CmmnTaskServiceImpl extends CommonEngineServiceImpl<CmmnEngineConfi
         }
         Map<String, Object> variables = new HashMap<>();
         variables.put(variableName, value);
-        commandExecutor.execute(new SetTaskVariablesCmd(taskId, variables, false));
+        withAutoTrace(() -> commandExecutor.execute(new SetTaskVariablesCmd(taskId, variables, false)));
     }
 
     @Override
@@ -343,41 +344,41 @@ public class CmmnTaskServiceImpl extends CommonEngineServiceImpl<CmmnEngineConfi
         }
         Map<String, Object> variables = new HashMap<>();
         variables.put(variableName, value);
-        commandExecutor.execute(new SetTaskVariablesCmd(taskId, variables, true));
+        withAutoTrace(() -> commandExecutor.execute(new SetTaskVariablesCmd(taskId, variables, true)));
     }
 
     @Override
     public void setVariables(String taskId, Map<String, ? extends Object> variables) {
-        commandExecutor.execute(new SetTaskVariablesCmd(taskId, variables, false));
+        withAutoTrace(() -> commandExecutor.execute(new SetTaskVariablesCmd(taskId, variables, false)));
     }
 
     @Override
     public void setVariablesLocal(String taskId, Map<String, ? extends Object> variables) {
-        commandExecutor.execute(new SetTaskVariablesCmd(taskId, variables, true));
+        withAutoTrace(() -> commandExecutor.execute(new SetTaskVariablesCmd(taskId, variables, true)));
     }
 
     @Override
     public void removeVariable(String taskId, String variableName) {
         Collection<String> variableNames = new ArrayList<>();
         variableNames.add(variableName);
-        commandExecutor.execute(new RemoveTaskVariablesCmd(taskId, variableNames, false));
+        withAutoTrace(() -> commandExecutor.execute(new RemoveTaskVariablesCmd(taskId, variableNames, false)));
     }
 
     @Override
     public void removeVariableLocal(String taskId, String variableName) {
         Collection<String> variableNames = new ArrayList<>(1);
         variableNames.add(variableName);
-        commandExecutor.execute(new RemoveTaskVariablesCmd(taskId, variableNames, true));
+        withAutoTrace(() -> commandExecutor.execute(new RemoveTaskVariablesCmd(taskId, variableNames, true)));
     }
 
     @Override
     public void removeVariables(String taskId, Collection<String> variableNames) {
-        commandExecutor.execute(new RemoveTaskVariablesCmd(taskId, variableNames, false));
+        withAutoTrace(() -> commandExecutor.execute(new RemoveTaskVariablesCmd(taskId, variableNames, false)));
     }
 
     @Override
     public void removeVariablesLocal(String taskId, Collection<String> variableNames) {
-        commandExecutor.execute(new RemoveTaskVariablesCmd(taskId, variableNames, true));
+        withAutoTrace(() -> commandExecutor.execute(new RemoveTaskVariablesCmd(taskId, variableNames, true)));
     }
     
     @Override
@@ -454,4 +455,12 @@ public class CmmnTaskServiceImpl extends CommonEngineServiceImpl<CmmnEngineConfi
         return new CmmnTaskBuilderImpl(commandExecutor, configuration);
     }
 
+    protected void withAutoTrace(Runnable runnable) {
+        VariableTraceHelper helper = configuration.getVariableTraceHelper();
+        if (helper != null) {
+            helper.runWithAutoTrace(runnable);
+        } else {
+            runnable.run();
+        }
+    }
 }

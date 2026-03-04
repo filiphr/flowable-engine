@@ -67,17 +67,11 @@ class VariableTracePersistenceTest {
     @Test
     @Deployment(resources = "org/flowable/engine/test/api/variables/VariableTraceTest.testVariableTraceWithProcessInstanceBuilder.bpmn20.xml")
     void testVariableTracePersistence() {
-        // Verify handler is wired
+        // Verify helper and handler are wired
         assertThat(processEngineConfiguration.isVariableTracePersistenceEnabled()).isTrue();
         assertThat(processEngineConfiguration.isVariableTraceEnabled()).isTrue();
-        boolean foundInterceptor = false;
-        for (org.flowable.common.engine.impl.interceptor.CommandInterceptor ci : processEngineConfiguration.getCommandInterceptors()) {
-            if (ci instanceof org.flowable.common.engine.impl.variabletrace.VariableTraceInterceptor vti) {
-                assertThat(vti.getHandler()).as("VariableTraceInterceptor handler").isNotNull();
-                foundInterceptor = true;
-            }
-        }
-        assertThat(foundInterceptor).as("VariableTraceInterceptor found").isTrue();
+        assertThat(processEngineConfiguration.getVariableTraceHelper()).as("VariableTraceHelper").isNotNull();
+        assertThat(processEngineConfiguration.getVariableTraceHelper().getHandler()).as("VariableTraceHelper handler").isNotNull();
 
         // Start a process that creates and reads variables
         ProcessInstance processInstance = runtimeService.createProcessInstanceBuilder()
@@ -106,13 +100,13 @@ class VariableTracePersistenceTest {
                 .extracting(VariableTraceEntity::getTraceId)
                 .containsOnly(traceId);
 
-        // Verify CREATE of inputVar at process start (no source element)
+        // Verify CREATE of inputVar at process start (source element is the start event)
         assertThat(traceEntries)
                 .filteredOn(e -> "CREATE".equals(e.getOperationType()) && "inputVar".equals(e.getVariableName()))
                 .hasSize(1)
                 .first()
                 .satisfies(e -> {
-                    assertThat(e.getSourceElementId()).isNull();
+                    assertThat(e.getSourceElementId()).isEqualTo("theStart");
                     assertThat(e.getValueText()).isEqualTo("hello");
                     assertThat(e.getVariableType()).isEqualTo("string");
                     assertThat(e.getTargetScopeId()).isEqualTo(processInstance.getId());

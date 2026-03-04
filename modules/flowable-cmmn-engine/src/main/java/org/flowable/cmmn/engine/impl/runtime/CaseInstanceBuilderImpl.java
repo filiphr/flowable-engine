@@ -17,6 +17,8 @@ import java.util.Map;
 
 import org.flowable.cmmn.api.runtime.CaseInstance;
 import org.flowable.cmmn.api.runtime.CaseInstanceBuilder;
+import org.flowable.common.engine.api.variable.VariableTrace;
+import org.flowable.common.engine.impl.variabletrace.VariableTraceHelper;
 
 /**
  * @author Joram Barrez
@@ -24,6 +26,7 @@ import org.flowable.cmmn.api.runtime.CaseInstanceBuilder;
 public class CaseInstanceBuilderImpl implements CaseInstanceBuilder {
 
     protected CmmnRuntimeServiceImpl cmmnRuntimeService;
+    protected VariableTraceHelper variableTraceHelper;
 
     protected String caseDefinitionId;
     protected String caseDefinitionKey;
@@ -47,13 +50,19 @@ public class CaseInstanceBuilderImpl implements CaseInstanceBuilder {
     protected String parentId;
     protected boolean fallbackToDefaultTenant;
     protected boolean startWithForm;
+    protected VariableTrace variableTrace;
 
     public CaseInstanceBuilderImpl() {
-        
+
     }
-    
+
     public CaseInstanceBuilderImpl(CmmnRuntimeServiceImpl cmmnRuntimeService) {
         this.cmmnRuntimeService = cmmnRuntimeService;
+    }
+
+    public CaseInstanceBuilderImpl(CmmnRuntimeServiceImpl cmmnRuntimeService, VariableTraceHelper variableTraceHelper) {
+        this.cmmnRuntimeService = cmmnRuntimeService;
+        this.variableTraceHelper = variableTraceHelper;
     }
 
     @Override
@@ -212,18 +221,39 @@ public class CaseInstanceBuilderImpl implements CaseInstanceBuilder {
     }
 
     @Override
+    public CaseInstanceBuilder variableTrace(VariableTrace variableTrace) {
+        this.variableTrace = variableTrace;
+        return this;
+    }
+
+    @Override
     public CaseInstance start() {
+        if (this.variableTrace != null) {
+            return VariableTraceHelper.executeWithCallerTrace(this.variableTrace, () -> cmmnRuntimeService.startCaseInstance(this));
+        } else if (variableTraceHelper != null) {
+            return variableTraceHelper.executeWithAutoTrace(() -> cmmnRuntimeService.startCaseInstance(this));
+        }
         return cmmnRuntimeService.startCaseInstance(this);
     }
-    
+
     @Override
     public CaseInstance startAsync() {
+        if (this.variableTrace != null) {
+            return VariableTraceHelper.executeWithCallerTrace(this.variableTrace, () -> cmmnRuntimeService.startCaseInstanceAsync(this));
+        } else if (variableTraceHelper != null) {
+            return variableTraceHelper.executeWithAutoTrace(() -> cmmnRuntimeService.startCaseInstanceAsync(this));
+        }
         return cmmnRuntimeService.startCaseInstanceAsync(this);
     }
 
     @Override
     public CaseInstance startWithForm() {
         this.startWithForm = true;
+        if (this.variableTrace != null) {
+            return VariableTraceHelper.executeWithCallerTrace(this.variableTrace, () -> cmmnRuntimeService.startCaseInstance(this));
+        } else if (variableTraceHelper != null) {
+            return variableTraceHelper.executeWithAutoTrace(() -> cmmnRuntimeService.startCaseInstance(this));
+        }
         return cmmnRuntimeService.startCaseInstance(this);
     }
 

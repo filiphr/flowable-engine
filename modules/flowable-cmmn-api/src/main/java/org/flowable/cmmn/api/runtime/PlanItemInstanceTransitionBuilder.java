@@ -14,6 +14,7 @@ package org.flowable.cmmn.api.runtime;
 
 import java.util.Map;
 
+import org.flowable.common.engine.api.variable.VariableTrace;
 import org.flowable.form.api.FormInfo;
 
 /**
@@ -81,6 +82,12 @@ public interface PlanItemInstanceTransitionBuilder {
      * @see #childTaskVariable(String, Object)
      */
     PlanItemInstanceTransitionBuilder childTaskFormVariables(Map<String, Object> variables, FormInfo formInfo, String outcome);
+
+    /**
+     * Sets a caller-controlled {@link VariableTrace} that will be bound for the duration of the transition.
+     * The caller can inspect the trace after the transition completes.
+     */
+    PlanItemInstanceTransitionBuilder variableTrace(VariableTrace variableTrace);
 
     /**
      * Completes the plan item instance, which needs to be a stage instance.

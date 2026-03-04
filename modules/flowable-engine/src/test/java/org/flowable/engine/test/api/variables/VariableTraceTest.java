@@ -66,6 +66,20 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
         });
         System.out.println();
 
+        // Verify the initial CREATE entry (variable set at process start) has the start event as source element
+        assertThat(entries)
+                .filteredOn(e -> e.operationType() == VariableTraceOperationType.CREATE && "theStart".equals(e.sourceElementId()) && "inputVar".equals(e.variableName()))
+                .hasSize(1)
+                .first()
+                .satisfies(e -> {
+                    assertThat(e.sourceElementId()).as("sourceElementId for initial CREATE").isEqualTo("theStart");
+                    assertThat(e.sourceScopeId()).as("sourceScopeId for initial CREATE").isEqualTo(processInstance.getId());
+                    assertThat(e.sourceScopeType()).as("sourceScopeType for initial CREATE").isEqualTo("bpmn");
+                    assertThat(e.sourceDefinitionId()).as("sourceDefinitionId for initial CREATE").isEqualTo(processInstance.getProcessDefinitionId());
+                    assertThat(e.targetScopeId()).as("targetScopeId for initial CREATE").isEqualTo(processInstance.getId());
+                    assertThat(e.targetScopeType()).as("targetScopeType for initial CREATE").isEqualTo("bpmn");
+                });
+
         // serviceTask1 should have read inputVar and created outputVar
         assertThat(entries)
                 .filteredOn(e -> e.operationType() == VariableTraceOperationType.READ)
@@ -187,7 +201,7 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
     @Test
     @Deployment(resources = "org/flowable/engine/test/api/variables/VariableTraceTest.testEngineAutoTrace.bpmn20.xml")
     public void testDirectScopedValueBinding() throws Exception {
-        // This test verifies the same behavior the VariableTraceInterceptor provides:
+        // This test verifies the same behavior the VariableTraceHelper provides:
         // binding a VariableTrace via ScopedValue and collecting entries.
         VariableTrace trace = new VariableTrace();
         ScopedValue.where(VariableTrace.CURRENT, trace)
@@ -317,12 +331,12 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
         }
         System.out.println();
 
-        // inputVar should be created at start (no element), read by serviceTask1, then deleted by serviceTask1
+        // inputVar should be created at start (start event), read by serviceTask1, then deleted by serviceTask1
         assertThat(entries)
                 .extracting(VariableTraceEntry::sourceElementId, VariableTraceEntry::variableName,
                         VariableTraceEntry::operationType, VariableTraceEntry::value)
                 .containsExactly(
-                        tuple(null, "inputVar", VariableTraceOperationType.CREATE, "hello"),
+                        tuple("theStart", "inputVar", VariableTraceOperationType.CREATE, "hello"),
                         tuple("serviceTask1", "inputVar", VariableTraceOperationType.READ, "hello"),
                         tuple("serviceTask1", "outputVar", VariableTraceOperationType.CREATE, "HELLO"),
                         tuple("serviceTask1", "inputVar", VariableTraceOperationType.DELETE, null));

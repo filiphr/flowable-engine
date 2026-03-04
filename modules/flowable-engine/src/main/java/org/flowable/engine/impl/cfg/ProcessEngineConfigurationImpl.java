@@ -54,7 +54,6 @@ import org.flowable.common.engine.impl.EngineDeployer;
 import org.flowable.common.engine.impl.HasExpressionManagerEngineConfiguration;
 import org.flowable.common.engine.impl.HasVariableServiceConfiguration;
 import org.flowable.common.engine.impl.HasVariableTypes;
-import org.flowable.common.engine.impl.variabletrace.VariableTraceInterceptor;
 import org.flowable.common.engine.impl.ScriptingEngineAwareEngineConfiguration;
 import org.flowable.common.engine.impl.ServiceConfigurator;
 import org.flowable.common.engine.impl.agenda.AgendaFutureMaxWaitTimeoutProvider;
@@ -973,6 +972,7 @@ public abstract class ProcessEngineConfigurationImpl extends ProcessEngineConfig
         initFormFieldHandler();
         initDatabaseEventLogging();
         initFlowable5CompatibilityHandler();
+        initVariableTraceHelper();
         initVariableServiceConfiguration();
         initDbVariableTraceHandler();
         initIdentityLinkServiceConfiguration();
@@ -1387,12 +1387,8 @@ public abstract class ProcessEngineConfigurationImpl extends ProcessEngineConfig
             effectiveHandler = dbHandler;
         }
 
-        // Wire into the already-created interceptor
-        for (CommandInterceptor interceptor : commandInterceptors) {
-            if (interceptor instanceof VariableTraceInterceptor vti) {
-                vti.setHandler(effectiveHandler);
-                break;
-            }
+        if (variableTraceHelper != null) {
+            variableTraceHelper.setHandler(effectiveHandler);
         }
     }
 

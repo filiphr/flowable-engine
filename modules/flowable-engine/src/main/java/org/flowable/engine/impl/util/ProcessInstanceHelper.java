@@ -39,6 +39,8 @@ import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.api.delegate.event.FlowableEngineEventType;
 import org.flowable.common.engine.api.delegate.event.FlowableEventDispatcher;
 import org.flowable.common.engine.api.scope.ScopeTypes;
+import org.flowable.common.engine.api.variable.VariableTrace;
+import org.flowable.common.engine.api.variable.VariableTraceSourceContext;
 import org.flowable.common.engine.impl.callback.CallbackData;
 import org.flowable.common.engine.impl.callback.RuntimeInstanceStateChangeCallback;
 import org.flowable.common.engine.impl.context.Context;
@@ -245,26 +247,21 @@ public class ProcessInstanceHelper {
                     processEngineConfiguration.getEngineCfgKey());
         }
 
-        processInstance.setVariables(processDataObjects(process.getDataObjects()));
-
-        // Set the variables passed into the start command
-        if (startInstanceBeforeContext.getVariables() != null) {
-            for (String varName : startInstanceBeforeContext.getVariables().keySet()) {
-                processInstance.setVariable(varName, startInstanceBeforeContext.getVariables().get(varName));
-            }
-        }
-        
-        if (startInstanceBeforeContext.getTransientVariables() != null) {
-            
-            Object eventInstance = startInstanceBeforeContext.getTransientVariables().get(EventConstants.EVENT_INSTANCE);
-            if (eventInstance instanceof EventInstance) {
-                EventInstanceBpmnUtil.handleEventInstanceOutParameters(processInstance, startInstanceBeforeContext.getInitialFlowElement(), 
-                                (EventInstance) eventInstance);
-            }
-            
-            for (String varName : startInstanceBeforeContext.getTransientVariables().keySet()) {
-                processInstance.setTransientVariable(varName, startInstanceBeforeContext.getTransientVariables().get(varName));
-            }
+        // When variable tracing is active, bind the start event as the source element
+        // so that initial variable CREATE entries get the correct sourceElementId.
+        // At this point, processInstance.getCurrentFlowElement() is null — the start event
+        // is only set on the child execution later — so we pre-bind the source context.
+        if (VariableTrace.CURRENT.isBound()) {
+            FlowElement traceInitialFlowElement = startInstanceBeforeContext.getInitialFlowElement();
+            VariableTraceSourceContext sourceContext = new VariableTraceSourceContext(
+                    traceInitialFlowElement != null ? traceInitialFlowElement.getId() : null,
+                    processInstance.getProcessInstanceId(),
+                    ScopeTypes.BPMN,
+                    processInstance.getProcessDefinitionId());
+            ScopedValue.where(VariableTraceSourceContext.CURRENT, sourceContext)
+                    .run(() -> setInitialVariables(processInstance, process, startInstanceBeforeContext));
+        } else {
+            setInitialVariables(processInstance, process, startInstanceBeforeContext);
         }
         
         // Fire events
@@ -297,6 +294,32 @@ public class ProcessInstanceHelper {
         }
 
         return processInstance;
+    }
+
+    protected void setInitialVariables(ExecutionEntity processInstance, Process process,
+            StartProcessInstanceBeforeContext startInstanceBeforeContext) {
+
+        processInstance.setVariables(processDataObjects(process.getDataObjects()));
+
+        // Set the variables passed into the start command
+        if (startInstanceBeforeContext.getVariables() != null) {
+            for (String varName : startInstanceBeforeContext.getVariables().keySet()) {
+                processInstance.setVariable(varName, startInstanceBeforeContext.getVariables().get(varName));
+            }
+        }
+
+        if (startInstanceBeforeContext.getTransientVariables() != null) {
+
+            Object eventInstance = startInstanceBeforeContext.getTransientVariables().get(EventConstants.EVENT_INSTANCE);
+            if (eventInstance instanceof EventInstance) {
+                EventInstanceBpmnUtil.handleEventInstanceOutParameters(processInstance, startInstanceBeforeContext.getInitialFlowElement(),
+                        (EventInstance) eventInstance);
+            }
+
+            for (String varName : startInstanceBeforeContext.getTransientVariables().keySet()) {
+                processInstance.setTransientVariable(varName, startInstanceBeforeContext.getTransientVariables().get(varName));
+            }
+        }
     }
 
     public void startProcessInstance(ExecutionEntity processInstance, CommandContext commandContext, Map<String, Object> variables) {

@@ -14,6 +14,8 @@ package org.flowable.cmmn.api.runtime;
 
 import java.util.Map;
 
+import org.flowable.common.engine.api.variable.VariableTrace;
+
 /**
  * @author Joram Barrez
  * @author Tijs Rademakers
@@ -151,6 +153,12 @@ public interface CaseInstanceBuilder {
      * @return modified case instance builder
      */
     CaseInstanceBuilder fallbackToDefaultTenant();
+
+    /**
+     * Sets a caller-controlled {@link VariableTrace} that will be bound for the duration of the case instance start.
+     * The caller can inspect the trace after the start completes.
+     */
+    CaseInstanceBuilder variableTrace(VariableTrace variableTrace);
 
     /**
      * Once all the information is set using this builder API, the start method will create the case instance, initialize it according all

@@ -15,9 +15,9 @@ package org.flowable.engine.impl.runtime;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.api.FlowableIllegalArgumentException;
 import org.flowable.common.engine.api.variable.VariableTrace;
+import org.flowable.common.engine.impl.variabletrace.VariableTraceHelper;
 import org.flowable.engine.impl.RuntimeServiceImpl;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.engine.runtime.ProcessInstanceBuilder;
@@ -272,14 +272,11 @@ public class ProcessInstanceBuilderImpl implements ProcessInstanceBuilder {
     @Override
     public ProcessInstance start() {
         if (this.variableTrace != null) {
-            try {
-                return ScopedValue.where(VariableTrace.CURRENT, this.variableTrace)
-                        .call(() -> runtimeService.startProcessInstance(this));
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new FlowableException("Unexpected exception during variable-traced process instance start", e);
-            }
+            return VariableTraceHelper.executeWithCallerTrace(this.variableTrace, () -> runtimeService.startProcessInstance(this));
+        }
+        VariableTraceHelper helper = runtimeService.getConfiguration().getVariableTraceHelper();
+        if (helper != null) {
+            return helper.executeWithAutoTrace(() -> runtimeService.startProcessInstance(this));
         }
         return runtimeService.startProcessInstance(this);
     }
@@ -287,14 +284,11 @@ public class ProcessInstanceBuilderImpl implements ProcessInstanceBuilder {
     @Override
     public ProcessInstance startAsync() {
         if (this.variableTrace != null) {
-            try {
-                return ScopedValue.where(VariableTrace.CURRENT, this.variableTrace)
-                        .call(() -> runtimeService.startProcessInstanceAsync(this));
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new FlowableException("Unexpected exception during variable-traced async process instance start", e);
-            }
+            return VariableTraceHelper.executeWithCallerTrace(this.variableTrace, () -> runtimeService.startProcessInstanceAsync(this));
+        }
+        VariableTraceHelper helper = runtimeService.getConfiguration().getVariableTraceHelper();
+        if (helper != null) {
+            return helper.executeWithAutoTrace(() -> runtimeService.startProcessInstanceAsync(this));
         }
         return runtimeService.startProcessInstanceAsync(this);
     }

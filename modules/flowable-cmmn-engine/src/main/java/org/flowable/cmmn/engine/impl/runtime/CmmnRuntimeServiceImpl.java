@@ -98,6 +98,7 @@ import org.flowable.common.engine.api.delegate.event.FlowableEngineEventType;
 import org.flowable.common.engine.api.delegate.event.FlowableEvent;
 import org.flowable.common.engine.api.delegate.event.FlowableEventListener;
 import org.flowable.common.engine.impl.service.CommonEngineServiceImpl;
+import org.flowable.common.engine.impl.variabletrace.VariableTraceHelper;
 import org.flowable.entitylink.api.EntityLink;
 import org.flowable.eventsubscription.api.EventSubscription;
 import org.flowable.eventsubscription.api.EventSubscriptionQuery;
@@ -117,12 +118,12 @@ public class CmmnRuntimeServiceImpl extends CommonEngineServiceImpl<CmmnEngineCo
 
     @Override
     public CaseInstanceBuilder createCaseInstanceBuilder() {
-        return new CaseInstanceBuilderImpl(this);
+        return new CaseInstanceBuilderImpl(this, configuration.getVariableTraceHelper());
     }
 
     @Override
     public PlanItemInstanceTransitionBuilder createPlanItemInstanceTransitionBuilder(String planItemInstanceId) {
-        return new PlanItemInstanceTransitionBuilderImpl(commandExecutor, planItemInstanceId);
+        return new PlanItemInstanceTransitionBuilderImpl(commandExecutor, planItemInstanceId, configuration.getVariableTraceHelper());
     }
 
     public CaseInstance startCaseInstance(CaseInstanceBuilder caseInstanceBuilder) {
@@ -138,9 +139,9 @@ public class CmmnRuntimeServiceImpl extends CommonEngineServiceImpl<CmmnEngineCo
         return commandExecutor.execute(new GetStartFormModelCmd(caseDefinitionId, caseInstanceId));
     }
 
-    @Override 
+    @Override
     public void triggerPlanItemInstance(String planItemInstanceId) {
-        commandExecutor.execute(new TriggerPlanItemInstanceCmd(planItemInstanceId));
+        withAutoTrace(() -> commandExecutor.execute(new TriggerPlanItemInstanceCmd(planItemInstanceId)));
     }
     
     @Override
@@ -155,27 +156,27 @@ public class CmmnRuntimeServiceImpl extends CommonEngineServiceImpl<CmmnEngineCo
     
     @Override
     public void completeStagePlanItemInstance(String planItemInstanceId) {
-        commandExecutor.execute(new CompleteStagePlanItemInstanceCmd(planItemInstanceId));
+        withAutoTrace(() -> commandExecutor.execute(new CompleteStagePlanItemInstanceCmd(planItemInstanceId)));
     }
 
     @Override
     public void completeStagePlanItemInstance(String planItemInstanceId, boolean force) {
-        commandExecutor.execute(new CompleteStagePlanItemInstanceCmd(planItemInstanceId, force));
+        withAutoTrace(() -> commandExecutor.execute(new CompleteStagePlanItemInstanceCmd(planItemInstanceId, force)));
     }
 
     @Override
     public void startPlanItemInstance(String planItemInstanceId) {
-        commandExecutor.execute(new StartPlanItemInstanceCmd(planItemInstanceId));
+        withAutoTrace(() -> commandExecutor.execute(new StartPlanItemInstanceCmd(planItemInstanceId)));
     }
-    
+
     @Override
     public void completeCaseInstance(String caseInstanceId) {
-        commandExecutor.execute(new CompleteCaseInstanceCmd(caseInstanceId));
+        withAutoTrace(() -> commandExecutor.execute(new CompleteCaseInstanceCmd(caseInstanceId)));
     }
 
     @Override
     public void terminateCaseInstance(String caseInstanceId) {
-        commandExecutor.execute(new TerminateCaseInstanceCmd(caseInstanceId));
+        withAutoTrace(() -> commandExecutor.execute(new TerminateCaseInstanceCmd(caseInstanceId)));
     }
 
     @Override
@@ -280,22 +281,22 @@ public class CmmnRuntimeServiceImpl extends CommonEngineServiceImpl<CmmnEngineCo
 
     @Override
     public void setVariable(String caseInstanceId, String variableName, Object variableValue) {
-        commandExecutor.execute(new SetVariableCmd(caseInstanceId, variableName, variableValue));
+        withAutoTrace(() -> commandExecutor.execute(new SetVariableCmd(caseInstanceId, variableName, variableValue)));
     }
 
     @Override
     public void setVariables(String caseInstanceId, Map<String, Object> variables) {
-        commandExecutor.execute(new SetVariablesCmd(caseInstanceId, variables));
+        withAutoTrace(() -> commandExecutor.execute(new SetVariablesCmd(caseInstanceId, variables)));
     }
-    
+
     @Override
     public void setLocalVariable(String planItemInstanceId, String variableName, Object variableValue) {
-        commandExecutor.execute(new SetLocalVariableCmd(planItemInstanceId, variableName, variableValue));
+        withAutoTrace(() -> commandExecutor.execute(new SetLocalVariableCmd(planItemInstanceId, variableName, variableValue)));
     }
-    
+
     @Override
     public void setLocalVariables(String planItemInstanceId, Map<String, Object> variables) {
-        commandExecutor.execute(new SetLocalVariablesCmd(planItemInstanceId, variables));
+        withAutoTrace(() -> commandExecutor.execute(new SetLocalVariablesCmd(planItemInstanceId, variables)));
     }
     
     @Override
@@ -320,22 +321,22 @@ public class CmmnRuntimeServiceImpl extends CommonEngineServiceImpl<CmmnEngineCo
 
     @Override
     public void removeVariable(String caseInstanceId, String variableName) {
-        commandExecutor.execute(new RemoveVariableCmd(caseInstanceId, variableName));
+        withAutoTrace(() -> commandExecutor.execute(new RemoveVariableCmd(caseInstanceId, variableName)));
     }
-    
+
     @Override
     public void removeVariables(String caseInstanceId, Collection<String> variableNames) {
-        commandExecutor.execute(new RemoveVariablesCmd(caseInstanceId, variableNames));
+        withAutoTrace(() -> commandExecutor.execute(new RemoveVariablesCmd(caseInstanceId, variableNames)));
     }
-    
+
     @Override
     public void removeLocalVariable(String planItemInstanceId, String variableName) {
-        commandExecutor.execute(new RemoveLocalVariableCmd(planItemInstanceId, variableName));
+        withAutoTrace(() -> commandExecutor.execute(new RemoveLocalVariableCmd(planItemInstanceId, variableName)));
     }
-    
+
     @Override
     public void removeLocalVariables(String planItemInstanceId, Collection<String> variableNames) {
-        commandExecutor.execute(new RemoveLocalVariablesCmd(planItemInstanceId, variableNames));
+        withAutoTrace(() -> commandExecutor.execute(new RemoveLocalVariablesCmd(planItemInstanceId, variableNames)));
     }
     
     @Override
@@ -522,5 +523,14 @@ public class CmmnRuntimeServiceImpl extends CommonEngineServiceImpl<CmmnEngineCo
 
     public void deleteCaseInstanceStartEventSubscriptions(CaseInstanceStartEventSubscriptionDeletionBuilderImpl builder) {
         commandExecutor.execute(new DeleteCaseInstanceStartEventSubscriptionCmd(builder));
+    }
+
+    protected void withAutoTrace(Runnable runnable) {
+        VariableTraceHelper helper = configuration.getVariableTraceHelper();
+        if (helper != null) {
+            helper.runWithAutoTrace(runnable);
+        } else {
+            runnable.run();
+        }
     }
 }

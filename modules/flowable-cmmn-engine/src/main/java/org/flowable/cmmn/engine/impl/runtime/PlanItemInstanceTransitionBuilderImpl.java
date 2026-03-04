@@ -23,7 +23,9 @@ import org.flowable.cmmn.engine.impl.cmd.StartPlanItemInstanceCmd;
 import org.flowable.cmmn.engine.impl.cmd.TerminatePlanItemInstanceCmd;
 import org.flowable.cmmn.engine.impl.cmd.TriggerPlanItemInstanceCmd;
 import org.flowable.common.engine.api.FlowableIllegalArgumentException;
+import org.flowable.common.engine.api.variable.VariableTrace;
 import org.flowable.common.engine.impl.interceptor.CommandExecutor;
+import org.flowable.common.engine.impl.variabletrace.VariableTraceHelper;
 import org.flowable.form.api.FormInfo;
 
 /**
@@ -32,8 +34,10 @@ import org.flowable.form.api.FormInfo;
 public class PlanItemInstanceTransitionBuilderImpl implements PlanItemInstanceTransitionBuilder {
 
     protected CommandExecutor commandExecutor;
+    protected VariableTraceHelper variableTraceHelper;
 
     protected String planItemInstanceId;
+    protected VariableTrace variableTrace;
     protected Map<String, Object> variables;
     protected Map<String, Object> formVariables;
     protected String formOutcome;
@@ -48,6 +52,18 @@ public class PlanItemInstanceTransitionBuilderImpl implements PlanItemInstanceTr
     public PlanItemInstanceTransitionBuilderImpl(CommandExecutor commandExecutor, String planItemInstanceId) {
         this.commandExecutor = commandExecutor;
         this.planItemInstanceId = planItemInstanceId;
+    }
+
+    public PlanItemInstanceTransitionBuilderImpl(CommandExecutor commandExecutor, String planItemInstanceId, VariableTraceHelper variableTraceHelper) {
+        this.commandExecutor = commandExecutor;
+        this.planItemInstanceId = planItemInstanceId;
+        this.variableTraceHelper = variableTraceHelper;
+    }
+
+    @Override
+    public PlanItemInstanceTransitionBuilder variableTrace(VariableTrace variableTrace) {
+        this.variableTrace = variableTrace;
+        return this;
     }
 
     @Override
@@ -171,50 +187,60 @@ public class PlanItemInstanceTransitionBuilderImpl implements PlanItemInstanceTr
     @Override
     public void trigger() {
         validateChildTaskVariablesNotSet();
-        commandExecutor.execute(new TriggerPlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome, 
-                formInfo, localVariables, transientVariables));
+        withTrace(() -> commandExecutor.execute(new TriggerPlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome,
+                formInfo, localVariables, transientVariables)));
     }
 
     @Override
     public void enable() {
         validateChildTaskVariablesNotSet();
-        commandExecutor.execute(new EnablePlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome, 
-                formInfo, localVariables, transientVariables));
+        withTrace(() -> commandExecutor.execute(new EnablePlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome,
+                formInfo, localVariables, transientVariables)));
     }
 
     @Override
     public void disable() {
         validateChildTaskVariablesNotSet();
-        commandExecutor.execute(new DisablePlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome, 
-                formInfo, localVariables, transientVariables));
+        withTrace(() -> commandExecutor.execute(new DisablePlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome,
+                formInfo, localVariables, transientVariables)));
     }
 
     @Override
     public void start() {
-        commandExecutor.execute(new StartPlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome, 
-                formInfo, localVariables, transientVariables, childTaskVariables, childTaskFormVariables, 
-                childTaskFormOutcome, childTaskFormInfo));
+        withTrace(() -> commandExecutor.execute(new StartPlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome,
+                formInfo, localVariables, transientVariables, childTaskVariables, childTaskFormVariables,
+                childTaskFormOutcome, childTaskFormInfo)));
     }
 
     @Override
     public void terminate() {
         validateChildTaskVariablesNotSet();
-        commandExecutor.execute(new TerminatePlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome, 
-                formInfo, localVariables, transientVariables));
+        withTrace(() -> commandExecutor.execute(new TerminatePlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome,
+                formInfo, localVariables, transientVariables)));
     }
 
     @Override
     public void completeStage() {
         validateChildTaskVariablesNotSet();
-        commandExecutor.execute(new CompleteStagePlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome, 
-                formInfo, localVariables, transientVariables, false));
+        withTrace(() -> commandExecutor.execute(new CompleteStagePlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome,
+                formInfo, localVariables, transientVariables, false)));
     }
 
     @Override
     public void forceCompleteStage() {
         validateChildTaskVariablesNotSet();
-        commandExecutor.execute(new CompleteStagePlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome, 
-                formInfo, localVariables, transientVariables, true));
+        withTrace(() -> commandExecutor.execute(new CompleteStagePlanItemInstanceCmd(planItemInstanceId, variables, formVariables, formOutcome,
+                formInfo, localVariables, transientVariables, true)));
+    }
+
+    protected void withTrace(Runnable runnable) {
+        if (this.variableTrace != null) {
+            VariableTraceHelper.runWithCallerTrace(this.variableTrace, runnable);
+        } else if (variableTraceHelper != null) {
+            variableTraceHelper.runWithAutoTrace(runnable);
+        } else {
+            runnable.run();
+        }
     }
 
     protected void validateChildTaskVariablesNotSet() {

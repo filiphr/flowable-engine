@@ -97,7 +97,7 @@ import org.flowable.common.engine.impl.interceptor.CommandInterceptor;
 import org.flowable.common.engine.impl.interceptor.CrDbRetryInterceptor;
 import org.flowable.common.engine.impl.interceptor.DefaultCommandInvoker;
 import org.flowable.common.engine.impl.interceptor.LogInterceptor;
-import org.flowable.common.engine.impl.variabletrace.VariableTraceInterceptor;
+import org.flowable.common.engine.impl.variabletrace.VariableTraceHelper;
 import org.flowable.common.engine.impl.interceptor.SessionFactory;
 import org.flowable.common.engine.impl.interceptor.TransactionContextInterceptor;
 import org.flowable.common.engine.impl.lock.LockManagerImpl;
@@ -267,6 +267,7 @@ public abstract class AbstractEngineConfiguration {
     protected VariableTraceHandler variableTraceHandler;
     protected VariableTracePredicate variableTracePredicate;
     protected boolean variableTracePersistenceEnabled;
+    protected VariableTraceHelper variableTraceHelper;
 
     protected boolean transactionsExternallyManaged;
 
@@ -556,9 +557,6 @@ public abstract class AbstractEngineConfiguration {
     public void initCommandInterceptors() {
         if (commandInterceptors == null) {
             commandInterceptors = new ArrayList<>();
-            if (isVariableTraceEnabled()) {
-                commandInterceptors.add(new VariableTraceInterceptor(variableTraceHandler, variableTracePredicate));
-            }
             if (customPreCommandInterceptors != null) {
                 commandInterceptors.addAll(customPreCommandInterceptors);
             }
@@ -1939,6 +1937,20 @@ public abstract class AbstractEngineConfiguration {
 
     public void setVariableTracePersistenceEnabled(boolean variableTracePersistenceEnabled) {
         this.variableTracePersistenceEnabled = variableTracePersistenceEnabled;
+    }
+
+    public VariableTraceHelper getVariableTraceHelper() {
+        return variableTraceHelper;
+    }
+
+    public void setVariableTraceHelper(VariableTraceHelper variableTraceHelper) {
+        this.variableTraceHelper = variableTraceHelper;
+    }
+
+    public void initVariableTraceHelper() {
+        if (isVariableTraceEnabled() && variableTraceHelper == null) {
+            variableTraceHelper = new VariableTraceHelper(variableTraceHandler, variableTracePredicate);
+        }
     }
 
     public Clock getClock() {

@@ -26,6 +26,7 @@ import org.flowable.common.engine.api.delegate.event.FlowableEngineEventType;
 import org.flowable.common.engine.api.delegate.event.FlowableEvent;
 import org.flowable.common.engine.api.delegate.event.FlowableEventListener;
 import org.flowable.common.engine.impl.service.CommonEngineServiceImpl;
+import org.flowable.common.engine.impl.variabletrace.VariableTraceHelper;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.form.FormData;
 import org.flowable.engine.impl.cfg.ProcessEngineConfigurationImpl;
@@ -129,62 +130,62 @@ public class RuntimeServiceImpl extends CommonEngineServiceImpl<ProcessEngineCon
 
     @Override
     public ProcessInstance startProcessInstanceByKey(String processDefinitionKey) {
-        return commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, null, null));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, null, null)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByKey(String processDefinitionKey, String businessKey) {
-        return commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, businessKey, null));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, businessKey, null)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByKey(String processDefinitionKey, Map<String, Object> variables) {
-        return commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, null, variables));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, null, variables)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByKey(String processDefinitionKey, String businessKey, Map<String, Object> variables) {
-        return commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, businessKey, variables));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, businessKey, variables)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByKeyAndTenantId(String processDefinitionKey, String tenantId) {
-        return commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, null, null, tenantId));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, null, null, tenantId)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByKeyAndTenantId(String processDefinitionKey, String businessKey, String tenantId) {
-        return commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, businessKey, null, tenantId));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, businessKey, null, tenantId)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByKeyAndTenantId(String processDefinitionKey, Map<String, Object> variables, String tenantId) {
-        return commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, null, variables, tenantId));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, null, variables, tenantId)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByKeyAndTenantId(String processDefinitionKey, String businessKey, Map<String, Object> variables, String tenantId) {
-        return commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, businessKey, variables, tenantId));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(processDefinitionKey, null, businessKey, variables, tenantId)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceById(String processDefinitionId) {
-        return commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(null, processDefinitionId, null, null));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(null, processDefinitionId, null, null)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceById(String processDefinitionId, String businessKey) {
-        return commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(null, processDefinitionId, businessKey, null));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(null, processDefinitionId, businessKey, null)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceById(String processDefinitionId, Map<String, Object> variables) {
-        return commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(null, processDefinitionId, null, variables));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(null, processDefinitionId, null, variables)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceById(String processDefinitionId, String businessKey, Map<String, Object> variables) {
-        return commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(null, processDefinitionId, businessKey, variables));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceCmd<ProcessInstance>(null, processDefinitionId, businessKey, variables)));
     }
 
     @Override
@@ -339,7 +340,7 @@ public class RuntimeServiceImpl extends CommonEngineServiceImpl<ProcessEngineCon
         }
         Map<String, Object> variables = new HashMap<>();
         variables.put(variableName, value);
-        commandExecutor.execute(new SetExecutionVariablesCmd(executionId, variables, false));
+        withAutoTrace(() -> commandExecutor.execute(new SetExecutionVariablesCmd(executionId, variables, false)));
     }
 
     @Override
@@ -349,17 +350,17 @@ public class RuntimeServiceImpl extends CommonEngineServiceImpl<ProcessEngineCon
         }
         Map<String, Object> variables = new HashMap<>();
         variables.put(variableName, value);
-        commandExecutor.execute(new SetExecutionVariablesCmd(executionId, variables, true));
+        withAutoTrace(() -> commandExecutor.execute(new SetExecutionVariablesCmd(executionId, variables, true)));
     }
 
     @Override
     public void setVariables(String executionId, Map<String, ?> variables) {
-        commandExecutor.execute(new SetExecutionVariablesCmd(executionId, variables, false));
+        withAutoTrace(() -> commandExecutor.execute(new SetExecutionVariablesCmd(executionId, variables, false)));
     }
 
     @Override
     public void setVariablesLocal(String executionId, Map<String, ?> variables) {
-        commandExecutor.execute(new SetExecutionVariablesCmd(executionId, variables, true));
+        withAutoTrace(() -> commandExecutor.execute(new SetExecutionVariablesCmd(executionId, variables, true)));
     }
     
     @Override
@@ -396,24 +397,24 @@ public class RuntimeServiceImpl extends CommonEngineServiceImpl<ProcessEngineCon
     public void removeVariable(String executionId, String variableName) {
         Collection<String> variableNames = new ArrayList<>(1);
         variableNames.add(variableName);
-        commandExecutor.execute(new RemoveExecutionVariablesCmd(executionId, variableNames, false));
+        withAutoTrace(() -> commandExecutor.execute(new RemoveExecutionVariablesCmd(executionId, variableNames, false)));
     }
 
     @Override
     public void removeVariableLocal(String executionId, String variableName) {
         Collection<String> variableNames = new ArrayList<>();
         variableNames.add(variableName);
-        commandExecutor.execute(new RemoveExecutionVariablesCmd(executionId, variableNames, true));
+        withAutoTrace(() -> commandExecutor.execute(new RemoveExecutionVariablesCmd(executionId, variableNames, true)));
     }
 
     @Override
     public void removeVariables(String executionId, Collection<String> variableNames) {
-        commandExecutor.execute(new RemoveExecutionVariablesCmd(executionId, variableNames, false));
+        withAutoTrace(() -> commandExecutor.execute(new RemoveExecutionVariablesCmd(executionId, variableNames, false)));
     }
 
     @Override
     public void removeVariablesLocal(String executionId, Collection<String> variableNames) {
-        commandExecutor.execute(new RemoveExecutionVariablesCmd(executionId, variableNames, true));
+        withAutoTrace(() -> commandExecutor.execute(new RemoveExecutionVariablesCmd(executionId, variableNames, true)));
     }
     
     @Override
@@ -492,31 +493,31 @@ public class RuntimeServiceImpl extends CommonEngineServiceImpl<ProcessEngineCon
 
     @Override
     public void trigger(String executionId) {
-        commandExecutor.execute(new TriggerCmd(executionId, null));
+        withAutoTrace(() -> commandExecutor.execute(new TriggerCmd(executionId, null)));
     }
 
     @Override
     public void triggerAsync(String executionId) {
-        commandExecutor.execute(new TriggerCmd(executionId, null, true));
+        withAutoTrace(() -> commandExecutor.execute(new TriggerCmd(executionId, null, true)));
     }
 
     public void signal(String executionId, Map<String, Object> processVariables) {
-        commandExecutor.execute(new TriggerCmd(executionId, processVariables));
+        withAutoTrace(() -> commandExecutor.execute(new TriggerCmd(executionId, processVariables)));
     }
 
     @Override
     public void trigger(String executionId, Map<String, Object> processVariables) {
-        commandExecutor.execute(new TriggerCmd(executionId, processVariables));
+        withAutoTrace(() -> commandExecutor.execute(new TriggerCmd(executionId, processVariables)));
     }
 
     @Override
     public void triggerAsync(String executionId, Map<String, Object> processVariables) {
-        commandExecutor.execute(new TriggerCmd(executionId, processVariables, true));
+        withAutoTrace(() -> commandExecutor.execute(new TriggerCmd(executionId, processVariables, true)));
     }
 
     @Override
     public void trigger(String executionId, Map<String, Object> processVariables, Map<String, Object> transientVariables) {
-        commandExecutor.execute(new TriggerCmd(executionId, processVariables, transientVariables));
+        withAutoTrace(() -> commandExecutor.execute(new TriggerCmd(executionId, processVariables, transientVariables)));
     }
     
     @Override
@@ -650,42 +651,42 @@ public class RuntimeServiceImpl extends CommonEngineServiceImpl<ProcessEngineCon
 
     @Override
     public ProcessInstance startProcessInstanceByMessage(String messageName) {
-        return commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, null, null, null));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, null, null, null)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByMessageAndTenantId(String messageName, String tenantId) {
-        return commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, null, null, tenantId));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, null, null, tenantId)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByMessage(String messageName, String businessKey) {
-        return commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, businessKey, null, null));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, businessKey, null, null)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByMessageAndTenantId(String messageName, String businessKey, String tenantId) {
-        return commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, businessKey, null, tenantId));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, businessKey, null, tenantId)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByMessage(String messageName, Map<String, Object> processVariables) {
-        return commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, null, processVariables, null));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, null, processVariables, null)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByMessageAndTenantId(String messageName, Map<String, Object> processVariables, String tenantId) {
-        return commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, null, processVariables, tenantId));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, null, processVariables, tenantId)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByMessage(String messageName, String businessKey, Map<String, Object> processVariables) {
-        return commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, businessKey, processVariables, null));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, businessKey, processVariables, null)));
     }
 
     @Override
     public ProcessInstance startProcessInstanceByMessageAndTenantId(String messageName, String businessKey, Map<String, Object> processVariables, String tenantId) {
-        return commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, businessKey, processVariables, tenantId));
+        return withAutoTrace(() -> commandExecutor.execute(new StartProcessInstanceByMessageCmd(messageName, businessKey, processVariables, tenantId)));
     }
 
     @Override
@@ -875,5 +876,22 @@ public class RuntimeServiceImpl extends CommonEngineServiceImpl<ProcessEngineCon
 
     public void changeActivityState(ChangeActivityStateBuilderImpl changeActivityStateBuilder) {
         commandExecutor.execute(new ChangeActivityStateCmd(changeActivityStateBuilder));
+    }
+
+    protected void withAutoTrace(Runnable runnable) {
+        VariableTraceHelper helper = configuration.getVariableTraceHelper();
+        if (helper != null) {
+            helper.runWithAutoTrace(runnable);
+        } else {
+            runnable.run();
+        }
+    }
+
+    protected <T> T withAutoTrace(java.util.concurrent.Callable<T> callable) {
+        VariableTraceHelper helper = configuration.getVariableTraceHelper();
+        if (helper != null) {
+            return helper.executeWithAutoTrace(callable);
+        }
+        return VariableTraceHelper.callUnchecked(callable);
     }
 }

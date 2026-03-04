@@ -15,9 +15,9 @@ package org.flowable.engine.impl;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.api.variable.VariableTrace;
 import org.flowable.common.engine.impl.interceptor.CommandExecutor;
+import org.flowable.common.engine.impl.variabletrace.VariableTraceHelper;
 import org.flowable.engine.impl.cmd.CompleteTaskCmd;
 import org.flowable.engine.impl.cmd.CompleteTaskWithFormCmd;
 import org.flowable.task.api.TaskCompletionBuilder;
@@ -29,6 +29,7 @@ import org.flowable.task.api.TaskCompletionBuilder;
 public class TaskCompletionBuilderImpl implements TaskCompletionBuilder {
 
     protected CommandExecutor commandExecutor;
+    protected VariableTraceHelper variableTraceHelper;
     protected String taskId;
     protected String formDefinitionId;
     protected String outcome;
@@ -40,8 +41,9 @@ public class TaskCompletionBuilderImpl implements TaskCompletionBuilder {
     protected Map<String, Object> transientVariables;
     protected Map<String, Object> transientVariablesLocal;
 
-    public TaskCompletionBuilderImpl(CommandExecutor commandExecutor) {
+    public TaskCompletionBuilderImpl(CommandExecutor commandExecutor, VariableTraceHelper variableTraceHelper) {
         this.commandExecutor = commandExecutor;
+        this.variableTraceHelper = variableTraceHelper;
     }
 
     @Override
@@ -140,17 +142,9 @@ public class TaskCompletionBuilderImpl implements TaskCompletionBuilder {
     @Override
     public void complete() {
         if (this.variableTrace != null) {
-            try {
-                ScopedValue.where(VariableTrace.CURRENT, this.variableTrace)
-                        .call(() -> {
-                            doComplete();
-                            return null;
-                        });
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new FlowableException("Unexpected exception during variable-traced task completion", e);
-            }
+            VariableTraceHelper.runWithCallerTrace(this.variableTrace, this::doComplete);
+        } else if (variableTraceHelper != null) {
+            variableTraceHelper.runWithAutoTrace(this::doComplete);
         } else {
             doComplete();
         }
