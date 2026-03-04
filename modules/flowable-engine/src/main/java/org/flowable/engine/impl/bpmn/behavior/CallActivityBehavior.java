@@ -173,19 +173,17 @@ public class CallActivityBehavior extends AbstractBpmnActivityBehavior implement
 
         }
 
-        List<IOParameter> inParameters = instanceBeforeContext.getInParameters();
-        if (!inParameters.isEmpty()) {
-            Map<String, Object> variables = instanceBeforeContext.getVariables();
-            // copy process variables
-            IOParameterUtil.processInParameters(inParameters, execution, variables::put, variables::put, expressionManager);
-        }
-
         if (!instanceBeforeContext.getVariables().isEmpty()) {
             initializeVariables(subProcessInstance, instanceBeforeContext.getVariables());
         }
 
         if (!instanceBeforeContext.getTransientVariables().isEmpty()) {
             initializeTransientVariables(subProcessInstance, instanceBeforeContext.getTransientVariables());
+        }
+
+        List<IOParameter> inParameters = instanceBeforeContext.getInParameters();
+        if (!inParameters.isEmpty()) {
+            IOParameterUtil.processInParameters(inParameters, execution, subProcessInstance, expressionManager);
         }
         
         // Process instance name is resolved after setting the variables on the process instance, so they can be used in the expression

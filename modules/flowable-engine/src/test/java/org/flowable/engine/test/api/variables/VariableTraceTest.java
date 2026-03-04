@@ -633,9 +633,9 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
                 });
 
         // Mapping ID verification:
-        // In-mapping: READ of inputVar gets a mappingId (happens inside IOParameterUtil per-parameter scope).
-        // The CREATE of childInput does NOT get a mappingId because it happens via bulk setVariables
-        // during child process initialization, outside the per-parameter ScopedValue binding.
+        // In-mapping: both READ and CREATE share the same mappingId.
+        // The READ happens inside IOParameterUtil per-parameter scope,
+        // and the CREATE rebinds the captured mappingId during initializeVariables.
         VariableTraceEntry inMappingRead = entries.stream()
                 .filter(e -> e.operationType() == VariableTraceOperationType.READ && "inputVar".equals(e.variableName())
                         && "callActivity1".equals(e.elementId()))
@@ -645,7 +645,8 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
         VariableTraceEntry inMappingCreate = entries.stream()
                 .filter(e -> e.operationType() == VariableTraceOperationType.CREATE && "childInput".equals(e.variableName()))
                 .findFirst().orElseThrow();
-        assertThat(inMappingCreate.mappingId()).as("in-mapping CREATE has no mappingId (bulk setVariables)").isNull();
+        assertThat(inMappingCreate.mappingId()).as("in-mapping CREATE should have same mappingId as READ")
+                .isEqualTo(inMappingRead.mappingId());
 
         // Out-mapping: both READ and CREATE share the same mappingId because they both happen
         // inside the same IOParameterUtil processParameter call (direct variable consumer).
