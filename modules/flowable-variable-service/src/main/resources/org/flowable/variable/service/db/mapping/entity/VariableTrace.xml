@@ -158,6 +158,14 @@
         order by SEQ_
     </select>
 
+    <select id="selectVariableTraceByScopeId" parameterType="map" resultMap="variableTraceResultMap">
+        select * from ${prefix}ACT_HI_VAR_TRACE
+        where (SCOPE_ID_ = #{scopeId, jdbcType=NVARCHAR}
+            or VAR_SCOPE_ID_ = #{scopeId, jdbcType=NVARCHAR})
+          and SCOPE_TYPE_ = #{scopeType, jdbcType=VARCHAR}
+        order by SEQ_
+    </select>
+
     <select id="countVariableTraceEntries" resultType="long">
         select count(*) from ${prefix}ACT_HI_VAR_TRACE
     </select>

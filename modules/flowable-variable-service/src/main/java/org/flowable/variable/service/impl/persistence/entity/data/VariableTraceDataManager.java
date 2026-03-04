@@ -26,6 +26,8 @@ public interface VariableTraceDataManager extends DataManager<VariableTraceEntit
 
     List<VariableTraceEntity> findByVariableScopeId(String variableScopeId, String variableScopeType);
 
+    List<VariableTraceEntity> findByScopeIdOrVariableScopeId(String scopeId, String scopeType);
+
     void deleteByTraceId(String traceId);
 
     void deleteByVariableScopeIdAndType(String variableScopeId, String variableScopeType);

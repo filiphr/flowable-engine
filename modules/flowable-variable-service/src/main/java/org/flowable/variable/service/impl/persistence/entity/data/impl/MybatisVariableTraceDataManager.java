@@ -60,6 +60,15 @@ public class MybatisVariableTraceDataManager extends AbstractDataManager<Variabl
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public List<VariableTraceEntity> findByScopeIdOrVariableScopeId(String scopeId, String scopeType) {
+        Map<String, Object> params = new HashMap<>(2);
+        params.put("scopeId", scopeId);
+        params.put("scopeType", scopeType);
+        return getDbSqlSession().selectListWithRawParameter("selectVariableTraceByScopeId", params);
+    }
+
+    @Override
     public void deleteByTraceId(String traceId) {
         getDbSqlSession().delete("deleteVariableTraceByTraceId", traceId, getManagedEntityClass());
     }

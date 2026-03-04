@@ -25,6 +25,13 @@ public interface VariableTraceEntityManager extends EntityManager<VariableTraceE
 
     List<VariableTraceEntity> findByVariableScopeId(String variableScopeId, String variableScopeType);
 
+    /**
+     * Find all trace entries where the given scope ID appears as either the scope (element's process/case instance)
+     * or the variable scope (where the variable lives). This is useful for retrieving the complete trace
+     * for a process/case instance, including cross-scope entries from call activity parameter mapping.
+     */
+    List<VariableTraceEntity> findByScopeIdOrVariableScopeId(String scopeId, String scopeType);
+
     void deleteByTraceId(String traceId);
 
     void deleteByVariableScopeIdAndType(String variableScopeId, String variableScopeType);
