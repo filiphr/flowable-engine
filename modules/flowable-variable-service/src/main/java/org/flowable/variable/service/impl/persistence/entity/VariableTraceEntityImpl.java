@@ -34,12 +34,13 @@ public class VariableTraceEntityImpl extends AbstractEntityNoRevision implements
     protected String variableType;
     protected String valueText;
     protected boolean transientVariable;
-    protected String sourceElementId;
-    protected String sourceScopeId;
-    protected String sourceScopeType;
-    protected String sourceDefinitionId;
-    protected String targetScopeId;
-    protected String targetScopeType;
+    protected String elementId;
+    protected String scopeId;
+    protected String scopeType;
+    protected String definitionId;
+    protected String variableScopeId;
+    protected String variableScopeType;
+    protected String mappingId;
 
     @Override
     public Object getPersistentState() {
@@ -133,62 +134,72 @@ public class VariableTraceEntityImpl extends AbstractEntityNoRevision implements
     }
 
     @Override
-    public String getSourceElementId() {
-        return sourceElementId;
+    public String getElementId() {
+        return elementId;
     }
 
     @Override
-    public void setSourceElementId(String sourceElementId) {
-        this.sourceElementId = sourceElementId;
+    public void setElementId(String elementId) {
+        this.elementId = elementId;
     }
 
     @Override
-    public String getSourceScopeId() {
-        return sourceScopeId;
+    public String getScopeId() {
+        return scopeId;
     }
 
     @Override
-    public void setSourceScopeId(String sourceScopeId) {
-        this.sourceScopeId = sourceScopeId;
+    public void setScopeId(String scopeId) {
+        this.scopeId = scopeId;
     }
 
     @Override
-    public String getSourceScopeType() {
-        return sourceScopeType;
+    public String getScopeType() {
+        return scopeType;
     }
 
     @Override
-    public void setSourceScopeType(String sourceScopeType) {
-        this.sourceScopeType = sourceScopeType;
+    public void setScopeType(String scopeType) {
+        this.scopeType = scopeType;
     }
 
     @Override
-    public String getSourceDefinitionId() {
-        return sourceDefinitionId;
+    public String getDefinitionId() {
+        return definitionId;
     }
 
     @Override
-    public void setSourceDefinitionId(String sourceDefinitionId) {
-        this.sourceDefinitionId = sourceDefinitionId;
+    public void setDefinitionId(String definitionId) {
+        this.definitionId = definitionId;
     }
 
     @Override
-    public String getTargetScopeId() {
-        return targetScopeId;
+    public String getVariableScopeId() {
+        return variableScopeId;
     }
 
     @Override
-    public void setTargetScopeId(String targetScopeId) {
-        this.targetScopeId = targetScopeId;
+    public void setVariableScopeId(String variableScopeId) {
+        this.variableScopeId = variableScopeId;
     }
 
     @Override
-    public String getTargetScopeType() {
-        return targetScopeType;
+    public String getVariableScopeType() {
+        return variableScopeType;
     }
 
     @Override
-    public void setTargetScopeType(String targetScopeType) {
-        this.targetScopeType = targetScopeType;
+    public void setVariableScopeType(String variableScopeType) {
+        this.variableScopeType = variableScopeType;
+    }
+
+    @Override
+    public String getMappingId() {
+        return mappingId;
+    }
+
+    @Override
+    public void setMappingId(String mappingId) {
+        this.mappingId = mappingId;
     }
 }

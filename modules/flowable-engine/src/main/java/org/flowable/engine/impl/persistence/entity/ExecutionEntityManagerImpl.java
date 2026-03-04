@@ -295,14 +295,10 @@ public class ExecutionEntityManagerImpl
         // Store in database
         insert(processInstanceExecution, false);
 
-        if (initiatorVariableName != null) {
-            processInstanceExecution.setVariable(initiatorVariableName, authenticatedUserId);
-        }
-
         // Need to be after insert, cause we need the id
         processInstanceExecution.setProcessInstanceId(processInstanceExecution.getId());
         processInstanceExecution.setRootProcessInstanceId(processInstanceExecution.getId());
-        
+
         if (engineConfiguration.getIdentityLinkInterceptor() != null) {
             engineConfiguration.getIdentityLinkInterceptor().handleCreateProcessInstance(processInstanceExecution);
         }

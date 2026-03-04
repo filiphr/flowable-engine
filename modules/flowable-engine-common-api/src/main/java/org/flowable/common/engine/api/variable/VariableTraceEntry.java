@@ -16,35 +16,39 @@ import java.time.Instant;
 
 /**
  * A single entry in a variable trace, recording a variable operation (read, create, update, delete)
- * with full source and target context.
+ * with full context about where the operation was initiated and where the variable lives.
  *
  * @param sequence the order of this entry within the trace (monotonically increasing)
  * @param timestamp the wall-clock time when this entry was recorded
- * @param sourceElementId the element (activity/plan item) that initiated the operation
- * @param sourceScopeId the scope ID (process/case instance) of the initiating element
- * @param sourceScopeType the scope type (e.g., "bpmn", "cmmn") of the initiating element
- * @param sourceDefinitionId the definition ID (process/case definition) of the initiating element
- * @param targetScopeId the scope ID where the variable is actually stored
- * @param targetScopeType the scope type where the variable is actually stored
+ * @param elementId the element (activity/plan item) that initiated the operation
+ * @param scopeId the scope ID (process/case instance) of the initiating element
+ * @param scopeType the scope type (e.g., "bpmn", "cmmn") of the initiating element
+ * @param definitionId the definition ID (process/case definition) of the initiating element
+ * @param variableScopeId the scope ID where the variable is actually stored
+ * @param variableScopeType the scope type where the variable is actually stored
  * @param variableName the name of the variable
  * @param variableType the Flowable variable type name (e.g., "string", "json", "integer", "boolean", "transient")
  * @param value the variable value ({@code null} for transient variables and deletes)
  * @param operationType the type of operation
  * @param transientVariable whether this is a transient variable (only the name is meaningful, value is always null)
+ * @param mappingId optional mapping correlation ID — when non-null, groups trace entries that belong to a single
+ *                  in/out parameter mapping (e.g., a READ from the source scope and a CREATE in the target scope
+ *                  produced by the same {@code IOParameter} share the same mapping ID)
  */
 public record VariableTraceEntry(
         long sequence,
         Instant timestamp,
-        String sourceElementId,
-        String sourceScopeId,
-        String sourceScopeType,
-        String sourceDefinitionId,
-        String targetScopeId,
-        String targetScopeType,
+        String elementId,
+        String scopeId,
+        String scopeType,
+        String definitionId,
+        String variableScopeId,
+        String variableScopeType,
         String variableName,
         String variableType,
         Object value,
         VariableTraceOperationType operationType,
-        boolean transientVariable) {
+        boolean transientVariable,
+        String mappingId) {
 
 }

@@ -44,6 +44,7 @@ import org.flowable.common.engine.api.variable.VariableTraceSourceContext;
 import org.flowable.common.engine.impl.callback.CallbackData;
 import org.flowable.common.engine.impl.callback.RuntimeInstanceStateChangeCallback;
 import org.flowable.common.engine.impl.context.Context;
+import org.flowable.common.engine.impl.identity.Authentication;
 import org.flowable.common.engine.impl.interceptor.CommandContext;
 import org.flowable.common.engine.impl.logging.LoggingSessionConstants;
 import org.flowable.common.engine.impl.util.CollectionUtil;
@@ -227,17 +228,17 @@ public class ProcessInstanceHelper {
                         startInstanceBeforeContext.getInitiatorVariableName(), startInstanceBeforeContext.getInitialActivityId());
 
         processEngineConfiguration.getHistoryManager().recordProcessInstanceStart(processInstance);
-        
+
         if (processEngineConfiguration.isLoggingSessionEnabled()) {
             BpmnLoggingSessionUtil.addLoggingData(LoggingSessionConstants.TYPE_PROCESS_STARTED, "Started process instance with id " + processInstance.getId(), processInstance);
         }
 
         // add owner and assignee identity links, if set
         if (StringUtils.isNotEmpty(startInstanceBeforeContext.getOwnerId())) {
-            IdentityLinkUtil.createProcessInstanceIdentityLink(processInstance, ownerId, null, IdentityLinkType.OWNER);
+            IdentityLinkUtil.createProcessInstanceIdentityLink(processInstance, startInstanceBeforeContext.getOwnerId(), null, IdentityLinkType.OWNER);
         }
         if (StringUtils.isNotEmpty(startInstanceBeforeContext.getAssigneeId())) {
-            IdentityLinkUtil.createProcessInstanceIdentityLink(processInstance, assigneeId, null, IdentityLinkType.ASSIGNEE);
+            IdentityLinkUtil.createProcessInstanceIdentityLink(processInstance, startInstanceBeforeContext.getAssigneeId(), null, IdentityLinkType.ASSIGNEE);
         }
 
         FlowableEventDispatcher eventDispatcher = processEngineConfiguration.getEventDispatcher();
@@ -248,25 +249,49 @@ public class ProcessInstanceHelper {
         }
 
         // When variable tracing is active, bind the start event as the source element
-        // so that initial variable CREATE entries get the correct sourceElementId.
+        // for all variable operations during process instance initialization and start.
         // At this point, processInstance.getCurrentFlowElement() is null — the start event
         // is only set on the child execution later — so we pre-bind the source context.
-        if (VariableTrace.CURRENT.isBound()) {
-            FlowElement traceInitialFlowElement = startInstanceBeforeContext.getInitialFlowElement();
+        if (VariableTrace.CURRENT.isBound() && !VariableTraceSourceContext.CURRENT.isBound()) {
+            FlowElement traceElement = startInstanceBeforeContext.getInitialFlowElement();
             VariableTraceSourceContext sourceContext = new VariableTraceSourceContext(
-                    traceInitialFlowElement != null ? traceInitialFlowElement.getId() : null,
+                    traceElement != null ? traceElement.getId() : null,
                     processInstance.getProcessInstanceId(),
                     ScopeTypes.BPMN,
                     processInstance.getProcessDefinitionId());
-            ScopedValue.where(VariableTraceSourceContext.CURRENT, sourceContext)
-                    .run(() -> setInitialVariables(processInstance, process, startInstanceBeforeContext));
-        } else {
-            setInitialVariables(processInstance, process, startInstanceBeforeContext);
+            try {
+                return ScopedValue.where(VariableTraceSourceContext.CURRENT, sourceContext)
+                        .call(() -> initAndStartProcessInstance(commandContext, processEngineConfiguration, processInstance,
+                                startInstanceBeforeContext, eventDispatcherEnabled, eventDispatcher, startProcessInstance));
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new FlowableException("Unexpected checked exception during variable-traced process instance creation", e);
+            }
         }
-        
+
+        return initAndStartProcessInstance(commandContext, processEngineConfiguration, processInstance,
+                startInstanceBeforeContext, eventDispatcherEnabled, eventDispatcher, startProcessInstance);
+    }
+
+    protected ExecutionEntity initAndStartProcessInstance(CommandContext commandContext,
+            ProcessEngineConfigurationImpl processEngineConfiguration, ExecutionEntity processInstance,
+            StartProcessInstanceBeforeContext startInstanceBeforeContext,
+            boolean eventDispatcherEnabled, FlowableEventDispatcher eventDispatcher,
+            boolean startProcessInstance) {
+
+        // Set the initiator variable (moved here from ExecutionEntityManagerImpl.createProcessInstanceExecution
+        // so it is covered by the variable trace source context binding)
+        String initiatorVariableName = startInstanceBeforeContext.getInitiatorVariableName();
+        if (initiatorVariableName != null) {
+            processInstance.setVariable(initiatorVariableName, Authentication.getAuthenticatedUserId());
+        }
+
+        setInitialVariables(processInstance, startInstanceBeforeContext.getProcess(), startInstanceBeforeContext);
+
         // Fire events
         if (eventDispatcherEnabled) {
-            eventDispatcher.dispatchEvent(FlowableEventBuilder.createEntityWithVariablesEvent(FlowableEngineEventType.ENTITY_INITIALIZED, 
+            eventDispatcher.dispatchEvent(FlowableEventBuilder.createEntityWithVariablesEvent(FlowableEngineEventType.ENTITY_INITIALIZED,
                     processInstance, startInstanceBeforeContext.getVariables(), false), processEngineConfiguration.getEngineCfgKey());
         }
 
@@ -279,17 +304,17 @@ public class ProcessInstanceHelper {
         if (startProcessInstance) {
             startProcessInstance(processInstance, commandContext, startInstanceBeforeContext.getVariables());
         }
-        
-        if (callbackId != null) {
+
+        if (startInstanceBeforeContext.getCallbackId() != null) {
             callCaseInstanceStateChangeCallbacks(commandContext, processInstance, null, ProcessInstanceState.RUNNING);
         }
-        
+
         if (processEngineConfiguration.getStartProcessInstanceInterceptor() != null) {
-            StartProcessInstanceAfterContext startInstanceAfterContext = new StartProcessInstanceAfterContext(processInstance, execution, 
-                            startInstanceBeforeContext.getVariables(), startInstanceBeforeContext.getTransientVariables(), 
-                            startInstanceBeforeContext.getInitialFlowElement(), startInstanceBeforeContext.getProcess(), 
+            StartProcessInstanceAfterContext startInstanceAfterContext = new StartProcessInstanceAfterContext(processInstance, execution,
+                            startInstanceBeforeContext.getVariables(), startInstanceBeforeContext.getTransientVariables(),
+                            startInstanceBeforeContext.getInitialFlowElement(), startInstanceBeforeContext.getProcess(),
                             startInstanceBeforeContext.getProcessDefinition());
-            
+
             processEngineConfiguration.getStartProcessInstanceInterceptor().afterStartProcessInstance(startInstanceAfterContext);
         }
 

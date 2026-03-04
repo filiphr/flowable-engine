@@ -84,7 +84,7 @@ class VariableTracePersistenceTest {
             VariableTraceEntityManager entityManager = processEngineConfiguration
                     .getVariableServiceConfiguration()
                     .getVariableTraceEntityManager();
-            return entityManager.findByTargetScopeId(processInstance.getId(), "bpmn");
+            return entityManager.findByVariableScopeId(processInstance.getId(), "bpmn");
         });
 
         assertThat(traceEntries).isNotEmpty();
@@ -106,11 +106,11 @@ class VariableTracePersistenceTest {
                 .hasSize(1)
                 .first()
                 .satisfies(e -> {
-                    assertThat(e.getSourceElementId()).isEqualTo("theStart");
+                    assertThat(e.getElementId()).isEqualTo("theStart");
                     assertThat(e.getValueText()).isEqualTo("hello");
                     assertThat(e.getVariableType()).isEqualTo("string");
-                    assertThat(e.getTargetScopeId()).isEqualTo(processInstance.getId());
-                    assertThat(e.getTargetScopeType()).isEqualTo("bpmn");
+                    assertThat(e.getVariableScopeId()).isEqualTo(processInstance.getId());
+                    assertThat(e.getVariableScopeType()).isEqualTo("bpmn");
                     assertThat(e.isTransientVariable()).isFalse();
                     assertThat(e.getTimestamp()).isNotNull();
                 });
@@ -121,7 +121,7 @@ class VariableTracePersistenceTest {
                 .hasSize(1)
                 .first()
                 .satisfies(e -> {
-                    assertThat(e.getSourceElementId()).isEqualTo("serviceTask1");
+                    assertThat(e.getElementId()).isEqualTo("serviceTask1");
                     assertThat(e.getValueText()).isEqualTo("hello");
                 });
 
@@ -131,7 +131,7 @@ class VariableTracePersistenceTest {
                 .hasSize(1)
                 .first()
                 .satisfies(e -> {
-                    assertThat(e.getSourceElementId()).isEqualTo("serviceTask1");
+                    assertThat(e.getElementId()).isEqualTo("serviceTask1");
                     assertThat(e.getValueText()).isEqualTo("HELLO");
                     assertThat(e.getVariableType()).isEqualTo("string");
                 });
@@ -162,7 +162,7 @@ class VariableTracePersistenceTest {
             VariableTraceEntityManager entityManager = processEngineConfiguration
                     .getVariableServiceConfiguration()
                     .getVariableTraceEntityManager();
-            return entityManager.findByTargetScopeId(processInstance.getId(), "bpmn");
+            return entityManager.findByVariableScopeId(processInstance.getId(), "bpmn");
         });
 
         assertThat(traceEntries).isNotEmpty();

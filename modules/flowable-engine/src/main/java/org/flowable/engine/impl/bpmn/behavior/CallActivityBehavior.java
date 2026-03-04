@@ -34,6 +34,8 @@ import org.flowable.common.engine.api.delegate.Expression;
 import org.flowable.common.engine.api.delegate.event.FlowableEngineEventType;
 import org.flowable.common.engine.api.delegate.event.FlowableEventDispatcher;
 import org.flowable.common.engine.api.scope.ScopeTypes;
+import org.flowable.common.engine.api.variable.VariableTrace;
+import org.flowable.common.engine.api.variable.VariableTraceSourceContext;
 import org.flowable.common.engine.impl.el.ExpressionManager;
 import org.flowable.common.engine.impl.interceptor.CommandContext;
 import org.flowable.engine.DynamicBpmnConstants;
@@ -268,7 +270,18 @@ public class CallActivityBehavior extends AbstractBpmnActivityBehavior implement
                 }
             };
 
-            IOParameterUtil.processOutParameters(outParameters, subProcessInstance, variableConsumer, variableConsumer, expressionManager);
+            // Bind the source context so that out-mapping trace entries get the call activity element
+            if (VariableTrace.CURRENT.isBound() && !VariableTraceSourceContext.CURRENT.isBound()) {
+                VariableTraceSourceContext sourceContext = new VariableTraceSourceContext(
+                        callActivity.getId(),
+                        executionEntity.getProcessInstanceId(),
+                        ScopeTypes.BPMN,
+                        executionEntity.getProcessDefinitionId());
+                ScopedValue.where(VariableTraceSourceContext.CURRENT, sourceContext)
+                        .run(() -> IOParameterUtil.processOutParameters(outParameters, subProcessInstance, variableConsumer, variableConsumer, expressionManager));
+            } else {
+                IOParameterUtil.processOutParameters(outParameters, subProcessInstance, variableConsumer, variableConsumer, expressionManager);
+            }
         }
     }
 

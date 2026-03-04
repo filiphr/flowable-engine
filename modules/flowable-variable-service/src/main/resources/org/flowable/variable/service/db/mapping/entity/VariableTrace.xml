@@ -23,8 +23,8 @@
     <insert id="insertVariableTrace" parameterType="org.flowable.variable.service.impl.persistence.entity.VariableTraceEntityImpl">
         insert into ${prefix}ACT_HI_VAR_TRACE (ID_, TRACE_ID_, SEQ_, TIME_STAMP_, OPERATION_TYPE_,
             VAR_NAME_, VAR_TYPE_, VALUE_TEXT_, TRANSIENT_,
-            SRC_ELEMENT_ID_, SRC_SCOPE_ID_, SRC_SCOPE_TYPE_, SRC_DEF_ID_,
-            TGT_SCOPE_ID_, TGT_SCOPE_TYPE_)
+            ELEMENT_ID_, SCOPE_ID_, SCOPE_TYPE_, DEF_ID_,
+            VAR_SCOPE_ID_, VAR_SCOPE_TYPE_, MAPPING_ID_)
         values (
             #{id, jdbcType=NVARCHAR},
             #{traceId, jdbcType=NVARCHAR},
@@ -35,20 +35,21 @@
             #{variableType, jdbcType=VARCHAR},
             #{valueText, jdbcType=NVARCHAR},
             #{transientVariable, jdbcType=BOOLEAN},
-            #{sourceElementId, jdbcType=NVARCHAR},
-            #{sourceScopeId, jdbcType=NVARCHAR},
-            #{sourceScopeType, jdbcType=VARCHAR},
-            #{sourceDefinitionId, jdbcType=NVARCHAR},
-            #{targetScopeId, jdbcType=NVARCHAR},
-            #{targetScopeType, jdbcType=VARCHAR}
+            #{elementId, jdbcType=NVARCHAR},
+            #{scopeId, jdbcType=NVARCHAR},
+            #{scopeType, jdbcType=VARCHAR},
+            #{definitionId, jdbcType=NVARCHAR},
+            #{variableScopeId, jdbcType=NVARCHAR},
+            #{variableScopeType, jdbcType=VARCHAR},
+            #{mappingId, jdbcType=NVARCHAR}
         )
     </insert>
 
     <insert id="bulkInsertVariableTrace" parameterType="java.util.List">
         insert into ${prefix}ACT_HI_VAR_TRACE (ID_, TRACE_ID_, SEQ_, TIME_STAMP_, OPERATION_TYPE_,
             VAR_NAME_, VAR_TYPE_, VALUE_TEXT_, TRANSIENT_,
-            SRC_ELEMENT_ID_, SRC_SCOPE_ID_, SRC_SCOPE_TYPE_, SRC_DEF_ID_,
-            TGT_SCOPE_ID_, TGT_SCOPE_TYPE_)
+            ELEMENT_ID_, SCOPE_ID_, SCOPE_TYPE_, DEF_ID_,
+            VAR_SCOPE_ID_, VAR_SCOPE_TYPE_, MAPPING_ID_)
         values
         <foreach collection="list" item="entry" separator=",">
             (#{entry.id, jdbcType=NVARCHAR},
@@ -60,12 +61,13 @@
              #{entry.variableType, jdbcType=VARCHAR},
              #{entry.valueText, jdbcType=NVARCHAR},
              #{entry.transientVariable, jdbcType=BOOLEAN},
-             #{entry.sourceElementId, jdbcType=NVARCHAR},
-             #{entry.sourceScopeId, jdbcType=NVARCHAR},
-             #{entry.sourceScopeType, jdbcType=VARCHAR},
-             #{entry.sourceDefinitionId, jdbcType=NVARCHAR},
-             #{entry.targetScopeId, jdbcType=NVARCHAR},
-             #{entry.targetScopeType, jdbcType=VARCHAR})
+             #{entry.elementId, jdbcType=NVARCHAR},
+             #{entry.scopeId, jdbcType=NVARCHAR},
+             #{entry.scopeType, jdbcType=VARCHAR},
+             #{entry.definitionId, jdbcType=NVARCHAR},
+             #{entry.variableScopeId, jdbcType=NVARCHAR},
+             #{entry.variableScopeType, jdbcType=VARCHAR},
+             #{entry.mappingId, jdbcType=NVARCHAR})
         </foreach>
     </insert>
 
@@ -74,8 +76,8 @@
         <foreach collection="list" item="entry">
             INTO ${prefix}ACT_HI_VAR_TRACE (ID_, TRACE_ID_, SEQ_, TIME_STAMP_, OPERATION_TYPE_,
                 VAR_NAME_, VAR_TYPE_, VALUE_TEXT_, TRANSIENT_,
-                SRC_ELEMENT_ID_, SRC_SCOPE_ID_, SRC_SCOPE_TYPE_, SRC_DEF_ID_,
-                TGT_SCOPE_ID_, TGT_SCOPE_TYPE_) VALUES
+                ELEMENT_ID_, SCOPE_ID_, SCOPE_TYPE_, DEF_ID_,
+                VAR_SCOPE_ID_, VAR_SCOPE_TYPE_, MAPPING_ID_) VALUES
             (#{entry.id, jdbcType=NVARCHAR},
              #{entry.traceId, jdbcType=NVARCHAR},
              #{entry.sequence, jdbcType=BIGINT},
@@ -85,12 +87,13 @@
              #{entry.variableType, jdbcType=VARCHAR},
              #{entry.valueText, jdbcType=NVARCHAR},
              #{entry.transientVariable, jdbcType=NUMERIC},
-             #{entry.sourceElementId, jdbcType=NVARCHAR},
-             #{entry.sourceScopeId, jdbcType=NVARCHAR},
-             #{entry.sourceScopeType, jdbcType=VARCHAR},
-             #{entry.sourceDefinitionId, jdbcType=NVARCHAR},
-             #{entry.targetScopeId, jdbcType=NVARCHAR},
-             #{entry.targetScopeType, jdbcType=VARCHAR})
+             #{entry.elementId, jdbcType=NVARCHAR},
+             #{entry.scopeId, jdbcType=NVARCHAR},
+             #{entry.scopeType, jdbcType=VARCHAR},
+             #{entry.definitionId, jdbcType=NVARCHAR},
+             #{entry.variableScopeId, jdbcType=NVARCHAR},
+             #{entry.variableScopeType, jdbcType=VARCHAR},
+             #{entry.mappingId, jdbcType=NVARCHAR})
         </foreach>
         SELECT * FROM dual
     </insert>
@@ -105,10 +108,10 @@
         delete from ${prefix}ACT_HI_VAR_TRACE where TRACE_ID_ = #{traceId, jdbcType=NVARCHAR}
     </delete>
 
-    <delete id="deleteVariableTraceByTargetScopeIdAndType" parameterType="map">
+    <delete id="deleteVariableTraceByVariableScopeIdAndType" parameterType="map">
         delete from ${prefix}ACT_HI_VAR_TRACE
-        where TGT_SCOPE_ID_ = #{targetScopeId, jdbcType=NVARCHAR}
-          and TGT_SCOPE_TYPE_ = #{targetScopeType, jdbcType=VARCHAR}
+        where VAR_SCOPE_ID_ = #{variableScopeId, jdbcType=NVARCHAR}
+          and VAR_SCOPE_TYPE_ = #{variableScopeType, jdbcType=VARCHAR}
     </delete>
 
     <delete id="bulkDeleteVariableTraceEntries">
@@ -127,12 +130,13 @@
         <result property="variableType" column="VAR_TYPE_" jdbcType="VARCHAR" />
         <result property="valueText" column="VALUE_TEXT_" jdbcType="NVARCHAR" />
         <result property="transientVariable" column="TRANSIENT_" jdbcType="BOOLEAN" />
-        <result property="sourceElementId" column="SRC_ELEMENT_ID_" jdbcType="NVARCHAR" />
-        <result property="sourceScopeId" column="SRC_SCOPE_ID_" jdbcType="NVARCHAR" />
-        <result property="sourceScopeType" column="SRC_SCOPE_TYPE_" jdbcType="VARCHAR" />
-        <result property="sourceDefinitionId" column="SRC_DEF_ID_" jdbcType="NVARCHAR" />
-        <result property="targetScopeId" column="TGT_SCOPE_ID_" jdbcType="NVARCHAR" />
-        <result property="targetScopeType" column="TGT_SCOPE_TYPE_" jdbcType="VARCHAR" />
+        <result property="elementId" column="ELEMENT_ID_" jdbcType="NVARCHAR" />
+        <result property="scopeId" column="SCOPE_ID_" jdbcType="NVARCHAR" />
+        <result property="scopeType" column="SCOPE_TYPE_" jdbcType="VARCHAR" />
+        <result property="definitionId" column="DEF_ID_" jdbcType="NVARCHAR" />
+        <result property="variableScopeId" column="VAR_SCOPE_ID_" jdbcType="NVARCHAR" />
+        <result property="variableScopeType" column="VAR_SCOPE_TYPE_" jdbcType="VARCHAR" />
+        <result property="mappingId" column="MAPPING_ID_" jdbcType="NVARCHAR" />
     </resultMap>
 
     <!-- VARIABLE TRACE SELECT -->
@@ -147,10 +151,10 @@
         order by SEQ_
     </select>
 
-    <select id="selectVariableTraceByTargetScopeId" parameterType="map" resultMap="variableTraceResultMap">
+    <select id="selectVariableTraceByVariableScopeId" parameterType="map" resultMap="variableTraceResultMap">
         select * from ${prefix}ACT_HI_VAR_TRACE
-        where TGT_SCOPE_ID_ = #{targetScopeId, jdbcType=NVARCHAR}
-          and TGT_SCOPE_TYPE_ = #{targetScopeType, jdbcType=VARCHAR}
+        where VAR_SCOPE_ID_ = #{variableScopeId, jdbcType=NVARCHAR}
+          and VAR_SCOPE_TYPE_ = #{variableScopeType, jdbcType=VARCHAR}
         order by SEQ_
     </select>
 

@@ -52,11 +52,11 @@ public class MybatisVariableTraceDataManager extends AbstractDataManager<Variabl
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<VariableTraceEntity> findByTargetScopeId(String targetScopeId, String targetScopeType) {
+    public List<VariableTraceEntity> findByVariableScopeId(String variableScopeId, String variableScopeType) {
         Map<String, Object> params = new HashMap<>(2);
-        params.put("targetScopeId", targetScopeId);
-        params.put("targetScopeType", targetScopeType);
-        return getDbSqlSession().selectListWithRawParameter("selectVariableTraceByTargetScopeId", params);
+        params.put("variableScopeId", variableScopeId);
+        params.put("variableScopeType", variableScopeType);
+        return getDbSqlSession().selectListWithRawParameter("selectVariableTraceByVariableScopeId", params);
     }
 
     @Override
@@ -65,11 +65,11 @@ public class MybatisVariableTraceDataManager extends AbstractDataManager<Variabl
     }
 
     @Override
-    public void deleteByTargetScopeIdAndType(String targetScopeId, String targetScopeType) {
+    public void deleteByVariableScopeIdAndType(String variableScopeId, String variableScopeType) {
         Map<String, Object> params = new HashMap<>(2);
-        params.put("targetScopeId", targetScopeId);
-        params.put("targetScopeType", targetScopeType);
-        getDbSqlSession().delete("deleteVariableTraceByTargetScopeIdAndType", params, getManagedEntityClass());
+        params.put("variableScopeId", variableScopeId);
+        params.put("variableScopeType", variableScopeType);
+        getDbSqlSession().delete("deleteVariableTraceByVariableScopeIdAndType", params, getManagedEntityClass());
     }
 
     @Override

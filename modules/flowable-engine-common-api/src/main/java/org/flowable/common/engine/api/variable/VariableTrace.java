@@ -39,6 +39,13 @@ public class VariableTrace {
 
     public static final ScopedValue<VariableTrace> CURRENT = ScopedValue.newInstance();
 
+    /**
+     * When bound, all trace entries recorded within the scope will be tagged with this mapping ID.
+     * Used during in/out parameter mapping to correlate the READ(s) and CREATE that belong to the
+     * same {@code IOParameter}.
+     */
+    public static final ScopedValue<String> CURRENT_MAPPING_ID = ScopedValue.newInstance();
+
     private final ConcurrentLinkedQueue<VariableTraceEntry> entries = new ConcurrentLinkedQueue<>();
     private final AtomicLong sequenceCounter = new AtomicLong();
     private final VariableTracePredicate predicate;
@@ -55,53 +62,57 @@ public class VariableTrace {
      * Records a variable read operation.
      */
     public void recordRead(VariableTraceSourceContext source,
-            String targetScopeId, String targetScopeType,
+            String variableScopeId, String variableScopeType,
             String variableName, String variableType, Object value, boolean transientVariable) {
 
         if (!shouldTrace(source)) {
             return;
         }
+        String mappingId = CURRENT_MAPPING_ID.isBound() ? CURRENT_MAPPING_ID.get() : null;
         entries.add(new VariableTraceEntry(
                 sequenceCounter.getAndIncrement(),
                 Instant.now(),
-                source != null ? source.sourceElementId() : null,
-                source != null ? source.sourceScopeId() : null,
-                source != null ? source.sourceScopeType() : null,
-                source != null ? source.sourceDefinitionId() : null,
-                targetScopeId,
-                targetScopeType,
+                source != null ? source.elementId() : null,
+                source != null ? source.scopeId() : null,
+                source != null ? source.scopeType() : null,
+                source != null ? source.definitionId() : null,
+                variableScopeId,
+                variableScopeType,
                 variableName,
                 variableType,
                 transientVariable ? null : value,
                 VariableTraceOperationType.READ,
-                transientVariable));
+                transientVariable,
+                mappingId));
     }
 
     /**
      * Records a variable write operation (create, update, or delete).
      */
     public void recordWrite(VariableTraceSourceContext source,
-            String targetScopeId, String targetScopeType,
+            String variableScopeId, String variableScopeType,
             String variableName, String variableType, Object value,
             VariableTraceOperationType operationType, boolean transientVariable) {
 
         if (!shouldTrace(source)) {
             return;
         }
+        String mappingId = CURRENT_MAPPING_ID.isBound() ? CURRENT_MAPPING_ID.get() : null;
         entries.add(new VariableTraceEntry(
                 sequenceCounter.getAndIncrement(),
                 Instant.now(),
-                source != null ? source.sourceElementId() : null,
-                source != null ? source.sourceScopeId() : null,
-                source != null ? source.sourceScopeType() : null,
-                source != null ? source.sourceDefinitionId() : null,
-                targetScopeId,
-                targetScopeType,
+                source != null ? source.elementId() : null,
+                source != null ? source.scopeId() : null,
+                source != null ? source.scopeType() : null,
+                source != null ? source.definitionId() : null,
+                variableScopeId,
+                variableScopeType,
                 variableName,
                 variableType,
                 transientVariable ? null : value,
                 operationType,
-                transientVariable));
+                transientVariable,
+                mappingId));
     }
 
     protected boolean shouldTrace(VariableTraceSourceContext source) {
@@ -109,10 +120,10 @@ public class VariableTrace {
             return true;
         }
         return predicate.shouldTrace(
-                source != null ? source.sourceDefinitionId() : null,
-                source != null ? source.sourceScopeId() : null,
-                source != null ? source.sourceScopeType() : null,
-                source != null ? source.sourceElementId() : null);
+                source != null ? source.definitionId() : null,
+                source != null ? source.scopeId() : null,
+                source != null ? source.scopeType() : null,
+                source != null ? source.elementId() : null);
     }
 
     public boolean isEmpty() {
@@ -127,13 +138,13 @@ public class VariableTrace {
     }
 
     /**
-     * Returns trace entries grouped by source element ID.
-     * Entries with a {@code null} source element ID are grouped under the key {@code null}.
+     * Returns trace entries grouped by element ID.
+     * Entries with a {@code null} element ID are grouped under the key {@code null}.
      */
     public Map<String, List<VariableTraceEntry>> byElement() {
         Map<String, List<VariableTraceEntry>> result = new LinkedHashMap<>();
         for (VariableTraceEntry entry : entries) {
-            result.computeIfAbsent(entry.sourceElementId(), k -> new ArrayList<>()).add(entry);
+            result.computeIfAbsent(entry.elementId(), k -> new ArrayList<>()).add(entry);
         }
         return result;
     }

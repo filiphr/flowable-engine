@@ -14,12 +14,14 @@ package org.flowable.cmmn.engine.impl.util;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.flowable.cmmn.model.IOParameter;
 import org.flowable.common.engine.api.delegate.Expression;
 import org.flowable.common.engine.api.variable.VariableContainer;
+import org.flowable.common.engine.api.variable.VariableTrace;
 import org.flowable.common.engine.impl.el.ExpressionManager;
 import org.flowable.common.engine.impl.util.JsonUtil;
 import org.slf4j.Logger;
@@ -53,42 +55,56 @@ public class IOParameterUtil {
             return;
         }
 
+        boolean traceBound = VariableTrace.CURRENT.isBound();
         for (IOParameter parameter : parameters) {
-
-            Object value;
-            if (StringUtils.isNotEmpty(parameter.getSourceExpression())) {
-                Expression expression = expressionManager.createExpression(parameter.getSourceExpression().trim());
-                value = expression.getValue(sourceContainer);
+            if (traceBound) {
+                String mappingId = UUID.randomUUID().toString();
+                ScopedValue.where(VariableTrace.CURRENT_MAPPING_ID, mappingId)
+                        .run(() -> processParameter(parameter, sourceContainer, targetVariableConsumer,
+                                targetTransientVariableConsumer, expressionManager, parameterType));
             } else {
-                value = sourceContainer.getVariable(parameter.getSource());
+                processParameter(parameter, sourceContainer, targetVariableConsumer,
+                        targetTransientVariableConsumer, expressionManager, parameterType);
             }
-            
-            if (value != null) {
-                value = JsonUtil.deepCopyIfJson(value);
-            }
+        }
+    }
 
-            String variableName = null;
-            if (StringUtils.isNotEmpty(parameter.getTargetExpression())) {
-                Expression expression = expressionManager.createExpression(parameter.getTargetExpression());
+    protected static void processParameter(IOParameter parameter, VariableContainer sourceContainer, BiConsumer<String, Object> targetVariableConsumer,
+            BiConsumer<String, Object> targetTransientVariableConsumer, ExpressionManager expressionManager, String parameterType) {
 
-                Object variableNameValue = expression.getValue(sourceContainer);
-                if (variableNameValue != null) {
-                    variableName = variableNameValue.toString();
-                } else {
-                    LOGGER.warn("{} parameter target expression {} did not resolve to a variable name, this is most likely a programmatic error",
-                            parameterType, parameter.getTargetExpression());
-                }
+        Object value;
+        if (StringUtils.isNotEmpty(parameter.getSourceExpression())) {
+            Expression expression = expressionManager.createExpression(parameter.getSourceExpression().trim());
+            value = expression.getValue(sourceContainer);
+        } else {
+            value = sourceContainer.getVariable(parameter.getSource());
+        }
 
-            } else if (StringUtils.isNotEmpty(parameter.getTarget())) {
-                variableName = parameter.getTarget();
+        if (value != null) {
+            value = JsonUtil.deepCopyIfJson(value);
+        }
 
-            }
+        String variableName = null;
+        if (StringUtils.isNotEmpty(parameter.getTargetExpression())) {
+            Expression expression = expressionManager.createExpression(parameter.getTargetExpression());
 
-            if (parameter.isTransient()) {
-                targetTransientVariableConsumer.accept(variableName, value);
+            Object variableNameValue = expression.getValue(sourceContainer);
+            if (variableNameValue != null) {
+                variableName = variableNameValue.toString();
             } else {
-                targetVariableConsumer.accept(variableName, value);
+                LOGGER.warn("{} parameter target expression {} did not resolve to a variable name, this is most likely a programmatic error",
+                        parameterType, parameter.getTargetExpression());
             }
+
+        } else if (StringUtils.isNotEmpty(parameter.getTarget())) {
+            variableName = parameter.getTarget();
+
+        }
+
+        if (parameter.isTransient()) {
+            targetTransientVariableConsumer.accept(variableName, value);
+        } else {
+            targetVariableConsumer.accept(variableName, value);
         }
     }
 

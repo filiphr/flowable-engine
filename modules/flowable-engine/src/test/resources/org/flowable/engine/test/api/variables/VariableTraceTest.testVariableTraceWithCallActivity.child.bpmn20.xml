@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:flowable="http://flowable.org/bpmn"
+  targetNamespace="http://www.flowable.org/processdef">
+
+  <process id="variableTraceCallActivityChild" isExecutable="true">
+
+    <startEvent id="childStart" />
+    <sequenceFlow sourceRef="childStart" targetRef="childServiceTask" />
+
+    <serviceTask id="childServiceTask" flowable:class="org.flowable.engine.test.api.variables.VariableTraceTest$ReadAndWriteChildDelegate" />
+    <sequenceFlow sourceRef="childServiceTask" targetRef="childEnd" />
+
+    <endEvent id="childEnd" />
+
+  </process>
+
+</definitions>

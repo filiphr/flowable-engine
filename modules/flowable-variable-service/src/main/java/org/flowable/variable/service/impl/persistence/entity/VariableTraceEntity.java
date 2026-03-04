@@ -48,21 +48,24 @@ public interface VariableTraceEntity extends Entity {
     boolean isTransientVariable();
     void setTransientVariable(boolean transientVariable);
 
-    String getSourceElementId();
-    void setSourceElementId(String sourceElementId);
+    String getElementId();
+    void setElementId(String elementId);
 
-    String getSourceScopeId();
-    void setSourceScopeId(String sourceScopeId);
+    String getScopeId();
+    void setScopeId(String scopeId);
 
-    String getSourceScopeType();
-    void setSourceScopeType(String sourceScopeType);
+    String getScopeType();
+    void setScopeType(String scopeType);
 
-    String getSourceDefinitionId();
-    void setSourceDefinitionId(String sourceDefinitionId);
+    String getDefinitionId();
+    void setDefinitionId(String definitionId);
 
-    String getTargetScopeId();
-    void setTargetScopeId(String targetScopeId);
+    String getVariableScopeId();
+    void setVariableScopeId(String variableScopeId);
 
-    String getTargetScopeType();
-    void setTargetScopeType(String targetScopeType);
+    String getVariableScopeType();
+    void setVariableScopeType(String variableScopeType);
+
+    String getMappingId();
+    void setMappingId(String mappingId);
 }

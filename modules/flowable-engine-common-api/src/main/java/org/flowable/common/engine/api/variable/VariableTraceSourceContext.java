@@ -13,20 +13,20 @@
 package org.flowable.common.engine.api.variable;
 
 /**
- * Captures the source context (the element that initiated a variable operation) during scope walking.
+ * Captures the context (the element that initiated a variable operation) during scope walking.
  * Bound via {@link ScopedValue} at the first/originating scope in a variable operation chain,
  * and carried through recursive parent scope calls without any parameter threading.
  *
- * @param sourceElementId the element ID (activity/plan item) that initiated the operation
- * @param sourceScopeId the scope ID (process/case instance) of the initiating element
- * @param sourceScopeType the scope type (e.g., "bpmn", "cmmn") of the initiating element
- * @param sourceDefinitionId the definition ID (process/case definition) of the initiating element
+ * @param elementId the element ID (activity/plan item) that initiated the operation
+ * @param scopeId the scope ID (process/case instance) of the initiating element
+ * @param scopeType the scope type (e.g., "bpmn", "cmmn") of the initiating element
+ * @param definitionId the definition ID (process/case definition) of the initiating element
  */
 public record VariableTraceSourceContext(
-        String sourceElementId,
-        String sourceScopeId,
-        String sourceScopeType,
-        String sourceDefinitionId) {
+        String elementId,
+        String scopeId,
+        String scopeType,
+        String definitionId) {
 
     public static final ScopedValue<VariableTraceSourceContext> CURRENT = ScopedValue.newInstance();
 }

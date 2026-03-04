@@ -76,12 +76,13 @@ public class DbVariableTraceHandler implements VariableTraceHandler {
                     entity.setVariableType(entry.variableType());
                     entity.setValueText(serializeValue(entry.value()));
                     entity.setTransientVariable(entry.transientVariable());
-                    entity.setSourceElementId(entry.sourceElementId());
-                    entity.setSourceScopeId(entry.sourceScopeId());
-                    entity.setSourceScopeType(entry.sourceScopeType());
-                    entity.setSourceDefinitionId(entry.sourceDefinitionId());
-                    entity.setTargetScopeId(entry.targetScopeId());
-                    entity.setTargetScopeType(entry.targetScopeType());
+                    entity.setElementId(entry.elementId());
+                    entity.setScopeId(entry.scopeId());
+                    entity.setScopeType(entry.scopeType());
+                    entity.setDefinitionId(entry.definitionId());
+                    entity.setVariableScopeId(entry.variableScopeId());
+                    entity.setVariableScopeType(entry.variableScopeType());
+                    entity.setMappingId(entry.mappingId());
                     variableTraceEntityManager.insert(entity);
                 }
                 return null;

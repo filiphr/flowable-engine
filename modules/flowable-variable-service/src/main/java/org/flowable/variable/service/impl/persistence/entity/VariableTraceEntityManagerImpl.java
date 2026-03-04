@@ -36,8 +36,8 @@ public class VariableTraceEntityManagerImpl
     }
 
     @Override
-    public List<VariableTraceEntity> findByTargetScopeId(String targetScopeId, String targetScopeType) {
-        return dataManager.findByTargetScopeId(targetScopeId, targetScopeType);
+    public List<VariableTraceEntity> findByVariableScopeId(String variableScopeId, String variableScopeType) {
+        return dataManager.findByVariableScopeId(variableScopeId, variableScopeType);
     }
 
     @Override
@@ -46,7 +46,7 @@ public class VariableTraceEntityManagerImpl
     }
 
     @Override
-    public void deleteByTargetScopeIdAndType(String targetScopeId, String targetScopeType) {
-        dataManager.deleteByTargetScopeIdAndType(targetScopeId, targetScopeType);
+    public void deleteByVariableScopeIdAndType(String variableScopeId, String variableScopeType) {
+        dataManager.deleteByVariableScopeIdAndType(variableScopeId, variableScopeType);
     }
 }

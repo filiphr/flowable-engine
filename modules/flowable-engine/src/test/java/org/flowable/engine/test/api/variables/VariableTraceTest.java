@@ -55,8 +55,8 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
         System.out.println("=== Variable Trace: Process Instance Builder ===");
         for (VariableTraceEntry e : entries) {
             System.out.printf("  #%-3d %-6s | element=%-15s | var=%-15s | type=%-10s | value=%-10s | source=%s | target=%s | transient=%s | %s%n",
-                    e.sequence(), e.operationType(), e.sourceElementId(), e.variableName(), e.variableType(), e.value(),
-                    e.sourceScopeId(), e.targetScopeId(), e.transientVariable(), e.timestamp());
+                    e.sequence(), e.operationType(), e.elementId(), e.variableName(), e.variableType(), e.value(),
+                    e.scopeId(), e.variableScopeId(), e.transientVariable(), e.timestamp());
         }
         System.out.println("=== By Element ===");
         trace.byElement().forEach((element, list) -> {
@@ -69,36 +69,36 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
 
         // Verify the initial CREATE entry (variable set at process start) has the start event as source element
         assertThat(entries)
-                .filteredOn(e -> e.operationType() == VariableTraceOperationType.CREATE && "theStart".equals(e.sourceElementId()) && "inputVar".equals(e.variableName()))
+                .filteredOn(e -> e.operationType() == VariableTraceOperationType.CREATE && "theStart".equals(e.elementId()) && "inputVar".equals(e.variableName()))
                 .hasSize(1)
                 .first()
                 .satisfies(e -> {
-                    assertThat(e.sourceElementId()).as("sourceElementId for initial CREATE").isEqualTo("theStart");
-                    assertThat(e.sourceScopeId()).as("sourceScopeId for initial CREATE").isEqualTo(processInstance.getId());
-                    assertThat(e.sourceScopeType()).as("sourceScopeType for initial CREATE").isEqualTo("bpmn");
-                    assertThat(e.sourceDefinitionId()).as("sourceDefinitionId for initial CREATE").isEqualTo(processInstance.getProcessDefinitionId());
-                    assertThat(e.targetScopeId()).as("targetScopeId for initial CREATE").isEqualTo(processInstance.getId());
-                    assertThat(e.targetScopeType()).as("targetScopeType for initial CREATE").isEqualTo("bpmn");
+                    assertThat(e.elementId()).as("elementId for initial CREATE").isEqualTo("theStart");
+                    assertThat(e.scopeId()).as("scopeId for initial CREATE").isEqualTo(processInstance.getId());
+                    assertThat(e.scopeType()).as("scopeType for initial CREATE").isEqualTo("bpmn");
+                    assertThat(e.definitionId()).as("definitionId for initial CREATE").isEqualTo(processInstance.getProcessDefinitionId());
+                    assertThat(e.variableScopeId()).as("variableScopeId for initial CREATE").isEqualTo(processInstance.getId());
+                    assertThat(e.variableScopeType()).as("variableScopeType for initial CREATE").isEqualTo("bpmn");
                 });
 
         // serviceTask1 should have read inputVar and created outputVar
         assertThat(entries)
                 .filteredOn(e -> e.operationType() == VariableTraceOperationType.READ)
-                .extracting(VariableTraceEntry::sourceElementId, VariableTraceEntry::variableName, VariableTraceEntry::variableType, VariableTraceEntry::value)
+                .extracting(VariableTraceEntry::elementId, VariableTraceEntry::variableName, VariableTraceEntry::variableType, VariableTraceEntry::value)
                 .containsExactly(tuple("serviceTask1", "inputVar", "string", "hello"));
 
         assertThat(entries)
                 .filteredOn(e -> e.operationType() == VariableTraceOperationType.CREATE)
-                .extracting(VariableTraceEntry::sourceElementId, VariableTraceEntry::variableName, VariableTraceEntry::variableType, VariableTraceEntry::value)
+                .extracting(VariableTraceEntry::elementId, VariableTraceEntry::variableName, VariableTraceEntry::variableType, VariableTraceEntry::value)
                 .contains(tuple("serviceTask1", "outputVar", "string", "HELLO"));
 
         // Source scope should be the process instance
         assertThat(entries)
-                .filteredOn(e -> "serviceTask1".equals(e.sourceElementId()))
+                .filteredOn(e -> "serviceTask1".equals(e.elementId()))
                 .allSatisfy(e -> {
-                    assertThat(e.sourceScopeId()).isEqualTo(processInstance.getId());
-                    assertThat(e.targetScopeId()).isEqualTo(processInstance.getId());
-                    assertThat(e.sourceDefinitionId()).isEqualTo(processInstance.getProcessDefinitionId());
+                    assertThat(e.scopeId()).isEqualTo(processInstance.getId());
+                    assertThat(e.variableScopeId()).isEqualTo(processInstance.getId());
+                    assertThat(e.definitionId()).isEqualTo(processInstance.getProcessDefinitionId());
                 });
 
         // Verify byElement() grouping
@@ -135,20 +135,20 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
         System.out.println("=== Variable Trace: Task Completion ===");
         for (VariableTraceEntry e : entries) {
             System.out.printf("  #%-3d %-6s | element=%-15s | var=%-15s | type=%-10s | value=%-10s | source=%s | target=%s | transient=%s | %s%n",
-                    e.sequence(), e.operationType(), e.sourceElementId(), e.variableName(), e.variableType(), e.value(),
-                    e.sourceScopeId(), e.targetScopeId(), e.transientVariable(), e.timestamp());
+                    e.sequence(), e.operationType(), e.elementId(), e.variableName(), e.variableType(), e.value(),
+                    e.scopeId(), e.variableScopeId(), e.transientVariable(), e.timestamp());
         }
         System.out.println();
 
         // serviceTask1 runs after task completion: reads inputVar, creates outputVar
         assertThat(entries)
                 .filteredOn(e -> e.operationType() == VariableTraceOperationType.READ && "inputVar".equals(e.variableName()))
-                .extracting(VariableTraceEntry::sourceElementId, VariableTraceEntry::value)
+                .extracting(VariableTraceEntry::elementId, VariableTraceEntry::value)
                 .containsExactly(tuple("serviceTask1", "world"));
 
         assertThat(entries)
                 .filteredOn(e -> e.operationType() == VariableTraceOperationType.CREATE && "outputVar".equals(e.variableName()))
-                .extracting(VariableTraceEntry::sourceElementId, VariableTraceEntry::value)
+                .extracting(VariableTraceEntry::elementId, VariableTraceEntry::value)
                 .containsExactly(tuple("serviceTask1", "WORLD"));
     }
 
@@ -196,7 +196,7 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
 
         // Only serviceTask2 entries should be present
         assertThat(selectiveTrace.getEntries())
-                .allSatisfy(e -> assertThat(e.sourceElementId()).isEqualTo("serviceTask2"));
+                .allSatisfy(e -> assertThat(e.elementId()).isEqualTo("serviceTask2"));
     }
 
     @Test
@@ -217,7 +217,7 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
         assertThat(trace.isEmpty()).isFalse();
 
         assertThat(trace.getEntries())
-                .filteredOn(e -> "serviceTask1".equals(e.sourceElementId()))
+                .filteredOn(e -> "serviceTask1".equals(e.elementId()))
                 .extracting(VariableTraceEntry::variableName, VariableTraceEntry::operationType)
                 .contains(
                         tuple("inputVar", VariableTraceOperationType.READ),
@@ -240,7 +240,7 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
         System.out.println("=== Variable Trace: Transient Variables ===");
         for (VariableTraceEntry e : entries) {
             System.out.printf("  #%-3d %-6s | element=%-15s | var=%-15s | type=%-10s | value=%-10s | transient=%s | %s%n",
-                    e.sequence(), e.operationType(), e.sourceElementId(), e.variableName(), e.variableType(), e.value(), e.transientVariable(), e.timestamp());
+                    e.sequence(), e.operationType(), e.elementId(), e.variableName(), e.variableType(), e.value(), e.transientVariable(), e.timestamp());
         }
         System.out.println();
 
@@ -272,37 +272,37 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
         System.out.println("=== Variable Trace: Expressions ===");
         for (VariableTraceEntry e : entries) {
             System.out.printf("  #%-3d %-6s | element=%-15s | var=%-15s | type=%-10s | value=%-15s | source=%s | target=%s%n",
-                    e.sequence(), e.operationType(), e.sourceElementId(), e.variableName(), e.variableType(), e.value(),
-                    e.sourceScopeId(), e.targetScopeId());
+                    e.sequence(), e.operationType(), e.elementId(), e.variableName(), e.variableType(), e.value(),
+                    e.scopeId(), e.variableScopeId());
         }
         System.out.println();
 
         // serviceTask1 expression "${inputVar.toUpperCase()}" should READ inputVar
         assertThat(entries)
-                .filteredOn(e -> "serviceTask1".equals(e.sourceElementId()) && e.operationType() == VariableTraceOperationType.READ)
+                .filteredOn(e -> "serviceTask1".equals(e.elementId()) && e.operationType() == VariableTraceOperationType.READ)
                 .extracting(VariableTraceEntry::variableName, VariableTraceEntry::value)
                 .contains(tuple("inputVar", "hello"));
 
         // serviceTask1 result variable should CREATE outputVar
         assertThat(entries)
-                .filteredOn(e -> "serviceTask1".equals(e.sourceElementId()) && e.operationType() == VariableTraceOperationType.CREATE)
+                .filteredOn(e -> "serviceTask1".equals(e.elementId()) && e.operationType() == VariableTraceOperationType.CREATE)
                 .extracting(VariableTraceEntry::variableName, VariableTraceEntry::value)
                 .contains(tuple("outputVar", "HELLO"));
 
         // The exclusive gateway condition "${outputVar == 'HELLO'}" should READ outputVar
         assertThat(entries)
-                .filteredOn(e -> "exclusiveGw".equals(e.sourceElementId()) && e.operationType() == VariableTraceOperationType.READ)
+                .filteredOn(e -> "exclusiveGw".equals(e.elementId()) && e.operationType() == VariableTraceOperationType.READ)
                 .extracting(VariableTraceEntry::variableName, VariableTraceEntry::value)
                 .contains(tuple("outputVar", "HELLO"));
 
         // serviceTask2 expression "${outputVar.concat('_world')}" should READ outputVar and CREATE finalVar
         assertThat(entries)
-                .filteredOn(e -> "serviceTask2".equals(e.sourceElementId()) && e.operationType() == VariableTraceOperationType.READ)
+                .filteredOn(e -> "serviceTask2".equals(e.elementId()) && e.operationType() == VariableTraceOperationType.READ)
                 .extracting(VariableTraceEntry::variableName, VariableTraceEntry::value)
                 .contains(tuple("outputVar", "HELLO"));
 
         assertThat(entries)
-                .filteredOn(e -> "serviceTask2".equals(e.sourceElementId()) && e.operationType() == VariableTraceOperationType.CREATE)
+                .filteredOn(e -> "serviceTask2".equals(e.elementId()) && e.operationType() == VariableTraceOperationType.CREATE)
                 .extracting(VariableTraceEntry::variableName, VariableTraceEntry::value)
                 .contains(tuple("finalVar", "HELLO_world"));
 
@@ -327,14 +327,14 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
         System.out.println("=== Variable Trace: Delete Variable ===");
         for (VariableTraceEntry e : entries) {
             System.out.printf("  #%-3d %-6s | element=%-15s | var=%-15s | type=%-10s | value=%-10s | source=%s | target=%s | transient=%s | %s%n",
-                    e.sequence(), e.operationType(), e.sourceElementId(), e.variableName(), e.variableType(), e.value(),
-                    e.sourceScopeId(), e.targetScopeId(), e.transientVariable(), e.timestamp());
+                    e.sequence(), e.operationType(), e.elementId(), e.variableName(), e.variableType(), e.value(),
+                    e.scopeId(), e.variableScopeId(), e.transientVariable(), e.timestamp());
         }
         System.out.println();
 
         // inputVar should be created at start (start event), read by serviceTask1, then deleted by serviceTask1
         assertThat(entries)
-                .extracting(VariableTraceEntry::sourceElementId, VariableTraceEntry::variableName,
+                .extracting(VariableTraceEntry::elementId, VariableTraceEntry::variableName,
                         VariableTraceEntry::operationType, VariableTraceEntry::value)
                 .containsExactly(
                         tuple("theStart", "inputVar", VariableTraceOperationType.CREATE, "hello"),
@@ -350,8 +350,8 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
                 .satisfies(e -> {
                     assertThat(e.variableName()).isEqualTo("inputVar");
                     assertThat(e.value()).isNull();
-                    assertThat(e.sourceElementId()).isEqualTo("serviceTask1");
-                    assertThat(e.sourceScopeId()).isEqualTo(processInstance.getId());
+                    assertThat(e.elementId()).isEqualTo("serviceTask1");
+                    assertThat(e.scopeId()).isEqualTo(processInstance.getId());
                 });
     }
 
@@ -412,7 +412,7 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
         System.out.println("=== Variable Trace: JSON In-Place Mutation ===");
         for (VariableTraceEntry e : entries) {
             System.out.printf("  #%-3d %-6s | element=%-15s | var=%-15s | type=%-10s | value=%-40s | transient=%s%n",
-                    e.sequence(), e.operationType(), e.sourceElementId(), e.variableName(), e.variableType(), e.value(), e.transientVariable());
+                    e.sequence(), e.operationType(), e.elementId(), e.variableName(), e.variableType(), e.value(), e.transientVariable());
         }
         System.out.println();
 
@@ -433,9 +433,9 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
         VariableTraceEntry updateEntry = jsonUpdates.get(0);
 
         // Source element is null for in-place mutations (detected at command close, not attributable to a single element)
-        assertThat(updateEntry.sourceElementId()).isNull();
+        assertThat(updateEntry.elementId()).isNull();
         assertThat(updateEntry.variableType()).isEqualTo("json");
-        assertThat(updateEntry.targetScopeId()).isEqualTo(processInstance.getId());
+        assertThat(updateEntry.variableScopeId()).isEqualTo(processInstance.getId());
 
         // The value should be the diff, not the full JSON
         @SuppressWarnings("unchecked")
@@ -461,6 +461,56 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
     }
 
     @Test
+    @Deployment(resources = "org/flowable/engine/test/api/variables/VariableTraceTest.testVariableTraceWithInitiator.bpmn20.xml")
+    public void testVariableTraceWithInitiator() {
+        try {
+            identityService.setAuthenticatedUserId("kermit");
+
+            VariableTrace trace = new VariableTrace();
+            ProcessInstance processInstance = runtimeService.createProcessInstanceBuilder()
+                    .processDefinitionKey("variableTraceWithInitiatorProcess")
+                    .variable("inputVar", "hello")
+                    .variableTrace(trace)
+                    .start();
+
+            List<VariableTraceEntry> entries = trace.getEntries();
+
+            System.out.println("=== Variable Trace: With Initiator ===");
+            for (VariableTraceEntry e : entries) {
+                System.out.printf("  #%-3d %-6s | element=%-15s | var=%-15s | type=%-10s | value=%-10s | source=%s/%s | target=%s/%s%n",
+                        e.sequence(), e.operationType(), e.elementId(), e.variableName(), e.variableType(), e.value(),
+                        e.scopeId(), e.scopeType(), e.variableScopeId(), e.variableScopeType());
+            }
+            System.out.println();
+
+            // The initiator variable should have the start event as source element
+            assertThat(entries)
+                    .filteredOn(e -> e.operationType() == VariableTraceOperationType.CREATE
+                            && "initiator".equals(e.variableName()))
+                    .hasSize(1)
+                    .first()
+                    .satisfies(e -> {
+                        assertThat(e.elementId()).as("elementId for initiator").isEqualTo("theStart");
+                        assertThat(e.scopeId()).as("scopeId for initiator").isEqualTo(processInstance.getId());
+                        assertThat(e.value()).isEqualTo("kermit");
+                    });
+
+            // inputVar should also have the start event as source element
+            assertThat(entries)
+                    .filteredOn(e -> e.operationType() == VariableTraceOperationType.CREATE
+                            && "inputVar".equals(e.variableName()))
+                    .hasSize(1)
+                    .first()
+                    .satisfies(e -> {
+                        assertThat(e.elementId()).as("elementId for inputVar").isEqualTo("theStart");
+                        assertThat(e.scopeId()).as("scopeId for inputVar").isEqualTo(processInstance.getId());
+                    });
+        } finally {
+            identityService.setAuthenticatedUserId(null);
+        }
+    }
+
+    @Test
     @Deployment(resources = "org/flowable/engine/test/api/variables/VariableTraceTest.testVariableTraceViaProcessInstance.bpmn20.xml")
     public void testVariableTraceViaProcessInstance() {
         // Tests that execution.getProcessInstance().setVariable(...) gets the correct source element
@@ -476,7 +526,7 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
         System.out.println("=== Variable Trace: Via ProcessInstance ===");
         for (VariableTraceEntry e : entries) {
             System.out.printf("  #%-3d %-6s | element=%-15s | var=%-15s | type=%-10s | value=%-10s%n",
-                    e.sequence(), e.operationType(), e.sourceElementId(), e.variableName(), e.variableType(), e.value());
+                    e.sequence(), e.operationType(), e.elementId(), e.variableName(), e.variableType(), e.value());
         }
         System.out.println();
 
@@ -486,9 +536,9 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
                 .hasSize(1)
                 .first()
                 .satisfies(e -> {
-                    assertThat(e.sourceElementId()).as("sourceElementId for processInstance.setVariable()").isEqualTo("serviceTask1");
-                    assertThat(e.sourceScopeId()).isEqualTo(processInstance.getId());
-                    assertThat(e.targetScopeId()).isEqualTo(processInstance.getId());
+                    assertThat(e.elementId()).as("elementId for processInstance.setVariable()").isEqualTo("serviceTask1");
+                    assertThat(e.scopeId()).isEqualTo(processInstance.getId());
+                    assertThat(e.variableScopeId()).isEqualTo(processInstance.getId());
                 });
     }
 
@@ -504,6 +554,139 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
             String input = (String) execution.getVariable("inputVar");
             ExecutionEntity executionEntity = (ExecutionEntity) execution;
             executionEntity.getProcessInstance().setVariable("outputVar", input.toUpperCase());
+        }
+    }
+
+    @Test
+    @Deployment(resources = {
+            "org/flowable/engine/test/api/variables/VariableTraceTest.testVariableTraceWithCallActivity.parent.bpmn20.xml",
+            "org/flowable/engine/test/api/variables/VariableTraceTest.testVariableTraceWithCallActivity.child.bpmn20.xml"
+    })
+    public void testVariableTraceWithCallActivity() {
+        VariableTrace trace = new VariableTrace();
+        ProcessInstance processInstance = runtimeService.createProcessInstanceBuilder()
+                .processDefinitionKey("variableTraceCallActivityParent")
+                .variable("inputVar", "hello")
+                .variableTrace(trace)
+                .start();
+
+        List<VariableTraceEntry> entries = trace.getEntries();
+
+        System.out.println("=== Variable Trace: Call Activity ===");
+        for (VariableTraceEntry e : entries) {
+            System.out.printf("  #%-3d %-6s | element=%-20s | var=%-15s | type=%-10s | value=%-10s | source=%s/%s | target=%s/%s%n",
+                    e.sequence(), e.operationType(), e.elementId(), e.variableName(), e.variableType(), e.value(),
+                    e.scopeId(), e.scopeType(), e.variableScopeId(), e.variableScopeType());
+        }
+        System.out.println();
+
+        // inputVar created at parent start event
+        assertThat(entries)
+                .filteredOn(e -> e.operationType() == VariableTraceOperationType.CREATE
+                        && "inputVar".equals(e.variableName()))
+                .hasSize(1)
+                .first()
+                .satisfies(e -> {
+                    assertThat(e.elementId()).as("elementId").isEqualTo("parentStart");
+                    assertThat(e.scopeId()).as("scopeId").isEqualTo(processInstance.getId());
+                });
+
+        // childInput created in child process via in-mapping (source element is the call activity)
+        assertThat(entries)
+                .filteredOn(e -> e.operationType() == VariableTraceOperationType.CREATE
+                        && "childInput".equals(e.variableName()))
+                .hasSize(1)
+                .first()
+                .satisfies(e -> {
+                    assertThat(e.elementId()).as("elementId for childInput").isEqualTo("callActivity1");
+                    assertThat(e.scopeId()).as("scopeId for childInput").isEqualTo(processInstance.getId());
+                });
+
+        // childServiceTask reads childInput and creates childOutput in the child process
+        assertThat(entries)
+                .filteredOn(e -> e.operationType() == VariableTraceOperationType.READ
+                        && "childInput".equals(e.variableName()))
+                .hasSize(1)
+                .first()
+                .satisfies(e -> {
+                    assertThat(e.elementId()).as("elementId for READ").isEqualTo("childServiceTask");
+                });
+
+        assertThat(entries)
+                .filteredOn(e -> e.operationType() == VariableTraceOperationType.CREATE
+                        && "childOutput".equals(e.variableName()))
+                .hasSize(1)
+                .first()
+                .satisfies(e -> {
+                    assertThat(e.elementId()).as("elementId for childOutput CREATE").isEqualTo("childServiceTask");
+                });
+
+        // outputVar created in parent process via out-mapping (source element is the call activity)
+        assertThat(entries)
+                .filteredOn(e -> e.operationType() == VariableTraceOperationType.CREATE
+                        && "outputVar".equals(e.variableName()))
+                .hasSize(1)
+                .first()
+                .satisfies(e -> {
+                    assertThat(e.elementId()).as("elementId for outputVar").isEqualTo("callActivity1");
+                    assertThat(e.scopeId()).as("scopeId for outputVar").isEqualTo(processInstance.getId());
+                });
+
+        // Mapping ID verification:
+        // In-mapping: READ of inputVar gets a mappingId (happens inside IOParameterUtil per-parameter scope).
+        // The CREATE of childInput does NOT get a mappingId because it happens via bulk setVariables
+        // during child process initialization, outside the per-parameter ScopedValue binding.
+        VariableTraceEntry inMappingRead = entries.stream()
+                .filter(e -> e.operationType() == VariableTraceOperationType.READ && "inputVar".equals(e.variableName())
+                        && "callActivity1".equals(e.elementId()))
+                .findFirst().orElseThrow();
+        assertThat(inMappingRead.mappingId()).as("in-mapping READ should have mappingId").isNotNull();
+
+        VariableTraceEntry inMappingCreate = entries.stream()
+                .filter(e -> e.operationType() == VariableTraceOperationType.CREATE && "childInput".equals(e.variableName()))
+                .findFirst().orElseThrow();
+        assertThat(inMappingCreate.mappingId()).as("in-mapping CREATE has no mappingId (bulk setVariables)").isNull();
+
+        // Out-mapping: both READ and CREATE share the same mappingId because they both happen
+        // inside the same IOParameterUtil processParameter call (direct variable consumer).
+        VariableTraceEntry outMappingRead = entries.stream()
+                .filter(e -> e.operationType() == VariableTraceOperationType.READ && "childOutput".equals(e.variableName())
+                        && "callActivity1".equals(e.elementId()))
+                .findFirst().orElseThrow();
+        VariableTraceEntry outMappingCreate = entries.stream()
+                .filter(e -> e.operationType() == VariableTraceOperationType.CREATE && "outputVar".equals(e.variableName()))
+                .findFirst().orElseThrow();
+        assertThat(outMappingRead.mappingId()).as("out-mapping READ should have mappingId").isNotNull();
+        assertThat(outMappingCreate.mappingId()).as("out-mapping CREATE should have same mappingId").isEqualTo(outMappingRead.mappingId());
+
+        // In-mapping and out-mapping should have different mappingIds
+        assertThat(inMappingRead.mappingId()).as("in and out mapping should have different IDs")
+                .isNotEqualTo(outMappingRead.mappingId());
+
+        // Non-mapping entries should have null mappingId
+        VariableTraceEntry initialCreate = entries.stream()
+                .filter(e -> e.operationType() == VariableTraceOperationType.CREATE && "inputVar".equals(e.variableName())
+                        && "parentStart".equals(e.elementId()))
+                .findFirst().orElseThrow();
+        assertThat(initialCreate.mappingId()).as("non-mapping CREATE should have null mappingId").isNull();
+
+        // Delegate reads/writes should have null mappingId
+        VariableTraceEntry delegateRead = entries.stream()
+                .filter(e -> e.operationType() == VariableTraceOperationType.READ && "childInput".equals(e.variableName())
+                        && "childServiceTask".equals(e.elementId()))
+                .findFirst().orElseThrow();
+        assertThat(delegateRead.mappingId()).as("delegate READ should have null mappingId").isNull();
+    }
+
+    /**
+     * Service task delegate for child process: reads childInput and creates childOutput.
+     */
+    public static class ReadAndWriteChildDelegate implements JavaDelegate {
+
+        @Override
+        public void execute(DelegateExecution execution) {
+            String input = (String) execution.getVariable("childInput");
+            execution.setVariable("childOutput", input.toUpperCase());
         }
     }
 

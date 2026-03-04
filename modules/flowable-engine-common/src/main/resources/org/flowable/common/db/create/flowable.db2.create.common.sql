@@ -587,17 +587,18 @@ create table ACT_HI_VAR_TRACE (
     VAR_TYPE_ varchar(100),
     VALUE_TEXT_ varchar(4000),
     TRANSIENT_ smallint check(TRANSIENT_ in (1,0)) not null,
-    SRC_ELEMENT_ID_ varchar(255),
-    SRC_SCOPE_ID_ varchar(255),
-    SRC_SCOPE_TYPE_ varchar(64),
-    SRC_DEF_ID_ varchar(255),
-    TGT_SCOPE_ID_ varchar(255),
-    TGT_SCOPE_TYPE_ varchar(64),
+    ELEMENT_ID_ varchar(255),
+    SCOPE_ID_ varchar(255),
+    SCOPE_TYPE_ varchar(64),
+    DEF_ID_ varchar(255),
+    VAR_SCOPE_ID_ varchar(255),
+    VAR_SCOPE_TYPE_ varchar(64),
+    MAPPING_ID_ varchar(64),
     primary key (ID_)
 );
 
 create index ACT_IDX_HI_VAR_TRACE_TRACE on ACT_HI_VAR_TRACE(TRACE_ID_);
-create index ACT_IDX_HI_VAR_TRACE_TGT on ACT_HI_VAR_TRACE(TGT_SCOPE_ID_, TGT_SCOPE_TYPE_);
+create index ACT_IDX_HI_VAR_TRACE_TGT on ACT_HI_VAR_TRACE(VAR_SCOPE_ID_, VAR_SCOPE_TYPE_);
 
 
 create table ACT_RU_EVENT_SUBSCR (
