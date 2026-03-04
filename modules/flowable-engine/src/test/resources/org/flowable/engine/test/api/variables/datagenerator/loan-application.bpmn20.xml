@@ -18,11 +18,11 @@
 
     <callActivity id="creditCheckCall" name="Credit Check" calledElement="creditCheck">
       <extensionElements>
-        <flowable:in source="applicantName" target="applicantName" />
+        <flowable:in source="applicantName" target="customerName" />
         <flowable:in source="applicantIncome" target="annualIncome" />
         <flowable:in source="loanAmount" target="requestedAmount" />
-        <flowable:out source="creditScore" target="creditScore" />
-        <flowable:out source="creditRisk" target="riskCategory" />
+        <flowable:out source="creditScore" target="applicantCreditScore" />
+        <flowable:out source="riskLevel" target="riskCategory" />
       </extensionElements>
     </callActivity>
     <sequenceFlow id="flow3" sourceRef="creditCheckCall" targetRef="loanDecision" />

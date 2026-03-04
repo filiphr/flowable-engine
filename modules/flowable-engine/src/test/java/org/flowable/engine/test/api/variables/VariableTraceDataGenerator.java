@@ -414,12 +414,12 @@ public class VariableTraceDataGenerator {
 
         @Override
         public void execute(DelegateExecution execution) {
-            String applicantName = (String) execution.getVariable("applicantName");
+            String customerName = (String) execution.getVariable("customerName");
             int income = (int) execution.getVariable("annualIncome");
             int requestedAmount = (int) execution.getVariable("requestedAmount");
             // Simulate credit score calculation
             int baseScore = 300 + (income / 500);
-            int nameHash = Math.abs(applicantName.hashCode() % 200);
+            int nameHash = Math.abs(customerName.hashCode() % 200);
             int score = Math.min(850, baseScore + nameHash - (requestedAmount / 1000));
             score = Math.max(300, score);
             execution.setVariable("creditScore", score);
@@ -443,7 +443,7 @@ public class VariableTraceDataGenerator {
             } else {
                 risk = "high";
             }
-            execution.setVariable("creditRisk", risk);
+            execution.setVariable("riskLevel", risk);
             execution.setVariable("riskDetails", "Score " + creditScore + " -> " + risk + " risk");
         }
     }
@@ -455,7 +455,7 @@ public class VariableTraceDataGenerator {
 
         @Override
         public void execute(DelegateExecution execution) {
-            int creditScore = (int) execution.getVariable("creditScore");
+            int creditScore = (int) execution.getVariable("applicantCreditScore");
             String riskCategory = (String) execution.getVariable("riskCategory");
             int loanAmount = (int) execution.getVariable("loanAmount");
 
@@ -469,7 +469,7 @@ public class VariableTraceDataGenerator {
             }
             execution.setVariable("loanDecision", decision);
             execution.setVariable("decisionReason",
-                    "Score: " + creditScore + ", Risk: " + riskCategory + ", Amount: " + loanAmount);
+                    "CreditScore: " + creditScore + ", Risk: " + riskCategory + ", Amount: " + loanAmount);
         }
     }
 }
