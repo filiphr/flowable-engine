@@ -82,6 +82,7 @@ public class VariableTraceDataGenerator {
 
         config.setAsyncHistoryEnabled(false);
         config.setVariableTracePersistenceEnabled(true);
+        config.setEnableEntityLinks(true);
 
         ProcessEngine processEngine = config.buildProcessEngine();
 
@@ -98,9 +99,11 @@ public class VariableTraceDataGenerator {
                     .addClasspathResource(basePath + "batch-processing.bpmn20.xml")
                     .addClasspathResource(basePath + "customer-onboarding.bpmn20.xml")
                     .addClasspathResource(basePath + "variable-lifecycle.bpmn20.xml")
+                    .addClasspathResource(basePath + "loan-application.bpmn20.xml")
+                    .addClasspathResource(basePath + "credit-check.bpmn20.xml")
                     .name("Variable Trace Data Generator")
                     .deploy();
-            System.out.println("  Deployed 4 process models.");
+            System.out.println("  Deployed 6 process models.");
 
             Random random = new Random(42); // fixed seed for reproducible data
             int totalInstances = 0;
@@ -187,6 +190,36 @@ public class VariableTraceDataGenerator {
                 totalInstances++;
             }
             System.out.println("  Created 5 variable lifecycle instances.");
+
+            // --- Loan Application with Call Activity (10 instances) ---
+            System.out.println("\nGenerating Loan Application instances (with call activity)...");
+            for (int i = 0; i < 10; i++) {
+                String customerName = CUSTOMER_NAMES[i];
+                int income = 30000 + random.nextInt(120000);
+                int loanAmount = 5000 + random.nextInt(45000);
+                String processInstanceId = runtimeService.createProcessInstanceBuilder()
+                        .processDefinitionKey("loanApplication")
+                        .variable("applicantName", customerName)
+                        .variable("applicantIncome", income)
+                        .variable("loanAmount", loanAmount)
+                        .variable("applicationId", "LOAN-" + UUID.randomUUID().toString().substring(0, 8))
+                        .start()
+                        .getId();
+
+                // Some loans need manual review — complete the user task
+                Task task = taskService.createTaskQuery()
+                        .processInstanceId(processInstanceId)
+                        .singleResult();
+                if (task != null) {
+                    taskService.createTaskCompletionBuilder()
+                            .taskId(task.getId())
+                            .variable("reviewerDecision", random.nextBoolean() ? "approved" : "rejected")
+                            .variable("reviewerNotes", "Manual review for " + customerName)
+                            .complete();
+                }
+                totalInstances++;
+            }
+            System.out.println("  Created 10 loan application instances.");
 
             // Print summary
             long traceEntryCount = config.getCommandExecutor().execute(commandContext -> {
@@ -353,6 +386,90 @@ public class VariableTraceDataGenerator {
 
             // CREATE a summary
             execution.setVariable("summary", "Processed " + tempVar1 + " with counter " + (counter + 1));
+        }
+    }
+
+    // --- Loan Application / Credit Check delegates ---
+
+    /**
+     * Prepares loan data: reads applicant info, computes debt-to-income ratio.
+     */
+    public static class PrepareLoanDelegate implements JavaDelegate {
+
+        @Override
+        public void execute(DelegateExecution execution) {
+            String applicantName = (String) execution.getVariable("applicantName");
+            int income = (int) execution.getVariable("applicantIncome");
+            int loanAmount = (int) execution.getVariable("loanAmount");
+            double dtiRatio = (double) loanAmount / income;
+            execution.setVariable("dtiRatio", Math.round(dtiRatio * 100.0) / 100.0);
+            execution.setVariable("loanStatus", "pending");
+        }
+    }
+
+    /**
+     * Child process delegate: calculates credit score from applicant name and income.
+     */
+    public static class CalculateCreditScoreDelegate implements JavaDelegate {
+
+        @Override
+        public void execute(DelegateExecution execution) {
+            String applicantName = (String) execution.getVariable("applicantName");
+            int income = (int) execution.getVariable("annualIncome");
+            int requestedAmount = (int) execution.getVariable("requestedAmount");
+            // Simulate credit score calculation
+            int baseScore = 300 + (income / 500);
+            int nameHash = Math.abs(applicantName.hashCode() % 200);
+            int score = Math.min(850, baseScore + nameHash - (requestedAmount / 1000));
+            score = Math.max(300, score);
+            execution.setVariable("creditScore", score);
+            execution.setVariable("scoreDetails", "Base: " + baseScore + ", adjustment: " + nameHash);
+        }
+    }
+
+    /**
+     * Child process delegate: assesses risk category based on credit score.
+     */
+    public static class AssessRiskDelegate implements JavaDelegate {
+
+        @Override
+        public void execute(DelegateExecution execution) {
+            int creditScore = (int) execution.getVariable("creditScore");
+            String risk;
+            if (creditScore >= 720) {
+                risk = "low";
+            } else if (creditScore >= 620) {
+                risk = "medium";
+            } else {
+                risk = "high";
+            }
+            execution.setVariable("creditRisk", risk);
+            execution.setVariable("riskDetails", "Score " + creditScore + " -> " + risk + " risk");
+        }
+    }
+
+    /**
+     * Parent process delegate: makes loan decision based on credit score and risk from child process.
+     */
+    public static class LoanDecisionDelegate implements JavaDelegate {
+
+        @Override
+        public void execute(DelegateExecution execution) {
+            int creditScore = (int) execution.getVariable("creditScore");
+            String riskCategory = (String) execution.getVariable("riskCategory");
+            int loanAmount = (int) execution.getVariable("loanAmount");
+
+            String decision;
+            if ("low".equals(riskCategory) && loanAmount < 30000) {
+                decision = "approved";
+            } else if ("high".equals(riskCategory)) {
+                decision = "rejected";
+            } else {
+                decision = "review";
+            }
+            execution.setVariable("loanDecision", decision);
+            execution.setVariable("decisionReason",
+                    "Score: " + creditScore + ", Risk: " + riskCategory + ", Amount: " + loanAmount);
         }
     }
 }

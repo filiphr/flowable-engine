@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
   xmlns:flowable="http://flowable.org/bpmn"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
   targetNamespace="http://www.flowable.org/processdef">
 
   <process id="batchProcessing" name="Batch Processing" isExecutable="true">
 
     <startEvent id="theStart" />
-    <sequenceFlow sourceRef="theStart" targetRef="processItems" />
+    <sequenceFlow id="flow1" sourceRef="theStart" targetRef="processItems" />
 
     <serviceTask id="processItems" name="Process Items"
         flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$ProcessItemDelegate">
@@ -14,14 +17,43 @@
           flowable:collection="${itemList}"
           flowable:elementVariable="item" />
     </serviceTask>
-    <sequenceFlow sourceRef="processItems" targetRef="aggregateResults" />
+    <sequenceFlow id="flow2" sourceRef="processItems" targetRef="aggregateResults" />
 
     <serviceTask id="aggregateResults" name="Aggregate Results"
         flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$AggregateResultsDelegate" />
-    <sequenceFlow sourceRef="aggregateResults" targetRef="theEnd" />
+    <sequenceFlow id="flow3" sourceRef="aggregateResults" targetRef="theEnd" />
 
     <endEvent id="theEnd" />
 
   </process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_batchProcessing">
+    <bpmndi:BPMNPlane bpmnElement="batchProcessing" id="BPMNPlane_batchProcessing">
+      <bpmndi:BPMNShape bpmnElement="theStart" id="BPMNShape_theStart">
+        <omgdc:Bounds height="30.0" width="30.0" x="100.0" y="163.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="processItems" id="BPMNShape_processItems">
+        <omgdc:Bounds height="80.0" width="100.0" x="180.0" y="138.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="aggregateResults" id="BPMNShape_aggregateResults">
+        <omgdc:Bounds height="80.0" width="100.0" x="330.0" y="138.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="theEnd" id="BPMNShape_theEnd">
+        <omgdc:Bounds height="28.0" width="28.0" x="480.0" y="164.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+        <omgdi:waypoint x="130.0" y="178.0" />
+        <omgdi:waypoint x="180.0" y="178.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+        <omgdi:waypoint x="280.0" y="178.0" />
+        <omgdi:waypoint x="330.0" y="178.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow3" id="BPMNEdge_flow3">
+        <omgdi:waypoint x="430.0" y="178.0" />
+        <omgdi:waypoint x="480.0" y="178.0" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 
 </definitions>

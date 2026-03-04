@@ -2,41 +2,100 @@
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:flowable="http://flowable.org/bpmn"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
   targetNamespace="http://www.flowable.org/processdef">
 
   <process id="orderProcessing" name="Order Processing" isExecutable="true">
 
     <startEvent id="theStart" />
-    <sequenceFlow sourceRef="theStart" targetRef="validateOrder" />
+    <sequenceFlow id="flow1" sourceRef="theStart" targetRef="validateOrder" />
 
     <serviceTask id="validateOrder" name="Validate Order"
         flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$ValidateOrderDelegate" />
-    <sequenceFlow sourceRef="validateOrder" targetRef="orderGateway" />
+    <sequenceFlow id="flow2" sourceRef="validateOrder" targetRef="orderGateway" />
 
     <exclusiveGateway id="orderGateway" />
 
-    <sequenceFlow sourceRef="orderGateway" targetRef="applyDiscount">
+    <sequenceFlow id="flow3" sourceRef="orderGateway" targetRef="applyDiscount">
       <conditionExpression xsi:type="tFormalExpression">${orderCategory == 'high'}</conditionExpression>
     </sequenceFlow>
-    <sequenceFlow sourceRef="orderGateway" targetRef="processPayment">
+    <sequenceFlow id="flow4" sourceRef="orderGateway" targetRef="processPayment">
       <conditionExpression xsi:type="tFormalExpression">${orderCategory == 'normal'}</conditionExpression>
     </sequenceFlow>
 
     <!-- High-value order path -->
     <serviceTask id="applyDiscount" name="Apply Discount"
         flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$ApplyDiscountDelegate" />
-    <sequenceFlow sourceRef="applyDiscount" targetRef="managerApproval" />
+    <sequenceFlow id="flow5" sourceRef="applyDiscount" targetRef="managerApproval" />
 
     <userTask id="managerApproval" name="Manager Approval" />
-    <sequenceFlow sourceRef="managerApproval" targetRef="processPayment" />
+    <sequenceFlow id="flow6" sourceRef="managerApproval" targetRef="processPayment" />
 
     <!-- Shared payment processing -->
     <serviceTask id="processPayment" name="Process Payment"
         flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$ProcessPaymentDelegate" />
-    <sequenceFlow sourceRef="processPayment" targetRef="theEnd" />
+    <sequenceFlow id="flow7" sourceRef="processPayment" targetRef="theEnd" />
 
     <endEvent id="theEnd" />
 
   </process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_orderProcessing">
+    <bpmndi:BPMNPlane bpmnElement="orderProcessing" id="BPMNPlane_orderProcessing">
+      <bpmndi:BPMNShape bpmnElement="theStart" id="BPMNShape_theStart">
+        <omgdc:Bounds height="30.0" width="30.0" x="100.0" y="163.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="validateOrder" id="BPMNShape_validateOrder">
+        <omgdc:Bounds height="80.0" width="100.0" x="180.0" y="138.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="orderGateway" id="BPMNShape_orderGateway">
+        <omgdc:Bounds height="40.0" width="40.0" x="330.0" y="158.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="applyDiscount" id="BPMNShape_applyDiscount">
+        <omgdc:Bounds height="80.0" width="100.0" x="420.0" y="60.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="managerApproval" id="BPMNShape_managerApproval">
+        <omgdc:Bounds height="80.0" width="100.0" x="570.0" y="60.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="processPayment" id="BPMNShape_processPayment">
+        <omgdc:Bounds height="80.0" width="100.0" x="720.0" y="138.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="theEnd" id="BPMNShape_theEnd">
+        <omgdc:Bounds height="28.0" width="28.0" x="870.0" y="164.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+        <omgdi:waypoint x="130.0" y="178.0" />
+        <omgdi:waypoint x="180.0" y="178.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+        <omgdi:waypoint x="280.0" y="178.0" />
+        <omgdi:waypoint x="330.0" y="178.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow3" id="BPMNEdge_flow3">
+        <omgdi:waypoint x="350.0" y="158.0" />
+        <omgdi:waypoint x="350.0" y="100.0" />
+        <omgdi:waypoint x="420.0" y="100.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow4" id="BPMNEdge_flow4">
+        <omgdi:waypoint x="370.0" y="178.0" />
+        <omgdi:waypoint x="720.0" y="178.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow5" id="BPMNEdge_flow5">
+        <omgdi:waypoint x="520.0" y="100.0" />
+        <omgdi:waypoint x="570.0" y="100.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow6" id="BPMNEdge_flow6">
+        <omgdi:waypoint x="670.0" y="100.0" />
+        <omgdi:waypoint x="770.0" y="100.0" />
+        <omgdi:waypoint x="770.0" y="138.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow7" id="BPMNEdge_flow7">
+        <omgdi:waypoint x="820.0" y="178.0" />
+        <omgdi:waypoint x="870.0" y="178.0" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 
 </definitions>

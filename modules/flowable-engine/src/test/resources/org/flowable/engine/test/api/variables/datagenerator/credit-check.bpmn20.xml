@@ -6,32 +6,32 @@
   xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
   targetNamespace="http://www.flowable.org/processdef">
 
-  <process id="variableLifecycle" name="Variable Lifecycle" isExecutable="true">
+  <process id="creditCheck" name="Credit Check" isExecutable="true">
 
     <startEvent id="theStart" />
-    <sequenceFlow id="flow1" sourceRef="theStart" targetRef="createVariables" />
+    <sequenceFlow id="flow1" sourceRef="theStart" targetRef="calculateScore" />
 
-    <serviceTask id="createVariables" name="Create Variables"
-        flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$VariableLifecycleDelegate" />
-    <sequenceFlow id="flow2" sourceRef="createVariables" targetRef="updateAndDelete" />
+    <serviceTask id="calculateScore" name="Calculate Credit Score"
+        flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$CalculateCreditScoreDelegate" />
+    <sequenceFlow id="flow2" sourceRef="calculateScore" targetRef="assessRisk" />
 
-    <serviceTask id="updateAndDelete" name="Update and Delete"
-        flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$UpdateAndDeleteDelegate" />
-    <sequenceFlow id="flow3" sourceRef="updateAndDelete" targetRef="theEnd" />
+    <serviceTask id="assessRisk" name="Assess Risk"
+        flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$AssessRiskDelegate" />
+    <sequenceFlow id="flow3" sourceRef="assessRisk" targetRef="theEnd" />
 
     <endEvent id="theEnd" />
 
   </process>
 
-  <bpmndi:BPMNDiagram id="BPMNDiagram_variableLifecycle">
-    <bpmndi:BPMNPlane bpmnElement="variableLifecycle" id="BPMNPlane_variableLifecycle">
+  <bpmndi:BPMNDiagram id="BPMNDiagram_creditCheck">
+    <bpmndi:BPMNPlane bpmnElement="creditCheck" id="BPMNPlane_creditCheck">
       <bpmndi:BPMNShape bpmnElement="theStart" id="BPMNShape_theStart">
         <omgdc:Bounds height="30.0" width="30.0" x="100.0" y="163.0" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape bpmnElement="createVariables" id="BPMNShape_createVariables">
+      <bpmndi:BPMNShape bpmnElement="calculateScore" id="BPMNShape_calculateScore">
         <omgdc:Bounds height="80.0" width="100.0" x="180.0" y="138.0" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape bpmnElement="updateAndDelete" id="BPMNShape_updateAndDelete">
+      <bpmndi:BPMNShape bpmnElement="assessRisk" id="BPMNShape_assessRisk">
         <omgdc:Bounds height="80.0" width="100.0" x="330.0" y="138.0" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="theEnd" id="BPMNShape_theEnd">

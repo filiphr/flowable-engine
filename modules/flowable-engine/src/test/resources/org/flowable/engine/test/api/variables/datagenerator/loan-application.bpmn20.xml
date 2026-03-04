@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:flowable="http://flowable.org/bpmn"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+  targetNamespace="http://www.flowable.org/processdef">
+
+  <process id="loanApplication" name="Loan Application" isExecutable="true">
+
+    <startEvent id="theStart" />
+    <sequenceFlow id="flow1" sourceRef="theStart" targetRef="prepareLoan" />
+
+    <serviceTask id="prepareLoan" name="Prepare Loan Data"
+        flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$PrepareLoanDelegate" />
+    <sequenceFlow id="flow2" sourceRef="prepareLoan" targetRef="creditCheckCall" />
+
+    <callActivity id="creditCheckCall" name="Credit Check" calledElement="creditCheck">
+      <extensionElements>
+        <flowable:in source="applicantName" target="applicantName" />
+        <flowable:in source="applicantIncome" target="annualIncome" />
+        <flowable:in source="loanAmount" target="requestedAmount" />
+        <flowable:out source="creditScore" target="creditScore" />
+        <flowable:out source="creditRisk" target="riskCategory" />
+      </extensionElements>
+    </callActivity>
+    <sequenceFlow id="flow3" sourceRef="creditCheckCall" targetRef="loanDecision" />
+
+    <serviceTask id="loanDecision" name="Loan Decision"
+        flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$LoanDecisionDelegate" />
+    <sequenceFlow id="flow4" sourceRef="loanDecision" targetRef="decisionGateway" />
+
+    <exclusiveGateway id="decisionGateway" />
+
+    <sequenceFlow id="flow5" sourceRef="decisionGateway" targetRef="manualReview">
+      <conditionExpression xsi:type="tFormalExpression">${loanDecision == 'review'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow6" sourceRef="decisionGateway" targetRef="theEnd">
+      <conditionExpression xsi:type="tFormalExpression">${loanDecision != 'review'}</conditionExpression>
+    </sequenceFlow>
+
+    <userTask id="manualReview" name="Manual Loan Review" />
+    <sequenceFlow id="flow7" sourceRef="manualReview" targetRef="theEnd" />
+
+    <endEvent id="theEnd" />
+
+  </process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_loanApplication">
+    <bpmndi:BPMNPlane bpmnElement="loanApplication" id="BPMNPlane_loanApplication">
+      <bpmndi:BPMNShape bpmnElement="theStart" id="BPMNShape_theStart">
+        <omgdc:Bounds height="30.0" width="30.0" x="100.0" y="163.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="prepareLoan" id="BPMNShape_prepareLoan">
+        <omgdc:Bounds height="80.0" width="100.0" x="180.0" y="138.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="creditCheckCall" id="BPMNShape_creditCheckCall">
+        <omgdc:Bounds height="80.0" width="100.0" x="330.0" y="138.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="loanDecision" id="BPMNShape_loanDecision">
+        <omgdc:Bounds height="80.0" width="100.0" x="480.0" y="138.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="decisionGateway" id="BPMNShape_decisionGateway">
+        <omgdc:Bounds height="40.0" width="40.0" x="630.0" y="158.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="manualReview" id="BPMNShape_manualReview">
+        <omgdc:Bounds height="80.0" width="100.0" x="720.0" y="60.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="theEnd" id="BPMNShape_theEnd">
+        <omgdc:Bounds height="28.0" width="28.0" x="870.0" y="164.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+        <omgdi:waypoint x="130.0" y="178.0" />
+        <omgdi:waypoint x="180.0" y="178.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+        <omgdi:waypoint x="280.0" y="178.0" />
+        <omgdi:waypoint x="330.0" y="178.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow3" id="BPMNEdge_flow3">
+        <omgdi:waypoint x="430.0" y="178.0" />
+        <omgdi:waypoint x="480.0" y="178.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow4" id="BPMNEdge_flow4">
+        <omgdi:waypoint x="580.0" y="178.0" />
+        <omgdi:waypoint x="630.0" y="178.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow5" id="BPMNEdge_flow5">
+        <omgdi:waypoint x="650.0" y="158.0" />
+        <omgdi:waypoint x="650.0" y="100.0" />
+        <omgdi:waypoint x="720.0" y="100.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow6" id="BPMNEdge_flow6">
+        <omgdi:waypoint x="670.0" y="178.0" />
+        <omgdi:waypoint x="870.0" y="178.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow7" id="BPMNEdge_flow7">
+        <omgdi:waypoint x="820.0" y="100.0" />
+        <omgdi:waypoint x="884.0" y="100.0" />
+        <omgdi:waypoint x="884.0" y="164.0" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</definitions>

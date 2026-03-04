@@ -1,34 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
   xmlns:flowable="http://flowable.org/bpmn"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
   targetNamespace="http://www.flowable.org/processdef">
 
   <process id="customerOnboarding" name="Customer Onboarding" isExecutable="true">
 
     <startEvent id="theStart" />
-    <sequenceFlow sourceRef="theStart" targetRef="kycSubProcess" />
+    <sequenceFlow id="flow1" sourceRef="theStart" targetRef="kycSubProcess" />
 
     <subProcess id="kycSubProcess" name="KYC Check">
       <startEvent id="subStart" />
-      <sequenceFlow sourceRef="subStart" targetRef="kycCheck" />
+      <sequenceFlow id="subFlow1" sourceRef="subStart" targetRef="kycCheck" />
 
       <serviceTask id="kycCheck" name="KYC Check"
           flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$KycCheckDelegate" />
-      <sequenceFlow sourceRef="kycCheck" targetRef="reviewTask" />
+      <sequenceFlow id="subFlow2" sourceRef="kycCheck" targetRef="reviewTask" />
 
       <userTask id="reviewTask" name="Review KYC Result" />
-      <sequenceFlow sourceRef="reviewTask" targetRef="subEnd" />
+      <sequenceFlow id="subFlow3" sourceRef="reviewTask" targetRef="subEnd" />
 
       <endEvent id="subEnd" />
     </subProcess>
-    <sequenceFlow sourceRef="kycSubProcess" targetRef="createAccount" />
+    <sequenceFlow id="flow2" sourceRef="kycSubProcess" targetRef="createAccount" />
 
     <serviceTask id="createAccount" name="Create Account"
         flowable:class="org.flowable.engine.test.api.variables.VariableTraceDataGenerator$CreateAccountDelegate" />
-    <sequenceFlow sourceRef="createAccount" targetRef="theEnd" />
+    <sequenceFlow id="flow3" sourceRef="createAccount" targetRef="theEnd" />
 
     <endEvent id="theEnd" />
 
   </process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_customerOnboarding">
+    <bpmndi:BPMNPlane bpmnElement="customerOnboarding" id="BPMNPlane_customerOnboarding">
+      <bpmndi:BPMNShape bpmnElement="theStart" id="BPMNShape_theStart">
+        <omgdc:Bounds height="30.0" width="30.0" x="75.0" y="190.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="kycSubProcess" id="BPMNShape_kycSubProcess" isExpanded="true">
+        <omgdc:Bounds height="150.0" width="450.0" x="155.0" y="130.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="subStart" id="BPMNShape_subStart">
+        <omgdc:Bounds height="30.0" width="30.0" x="175.0" y="190.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="kycCheck" id="BPMNShape_kycCheck">
+        <omgdc:Bounds height="80.0" width="100.0" x="245.0" y="165.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="reviewTask" id="BPMNShape_reviewTask">
+        <omgdc:Bounds height="80.0" width="100.0" x="390.0" y="165.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="subEnd" id="BPMNShape_subEnd">
+        <omgdc:Bounds height="28.0" width="28.0" x="540.0" y="191.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="createAccount" id="BPMNShape_createAccount">
+        <omgdc:Bounds height="80.0" width="100.0" x="655.0" y="165.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="theEnd" id="BPMNShape_theEnd">
+        <omgdc:Bounds height="28.0" width="28.0" x="805.0" y="191.0" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+        <omgdi:waypoint x="105.0" y="205.0" />
+        <omgdi:waypoint x="155.0" y="205.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="subFlow1" id="BPMNEdge_subFlow1">
+        <omgdi:waypoint x="205.0" y="205.0" />
+        <omgdi:waypoint x="245.0" y="205.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="subFlow2" id="BPMNEdge_subFlow2">
+        <omgdi:waypoint x="345.0" y="205.0" />
+        <omgdi:waypoint x="390.0" y="205.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="subFlow3" id="BPMNEdge_subFlow3">
+        <omgdi:waypoint x="490.0" y="205.0" />
+        <omgdi:waypoint x="540.0" y="205.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+        <omgdi:waypoint x="605.0" y="205.0" />
+        <omgdi:waypoint x="655.0" y="205.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow3" id="BPMNEdge_flow3">
+        <omgdi:waypoint x="755.0" y="205.0" />
+        <omgdi:waypoint x="805.0" y="205.0" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 
 </definitions>
