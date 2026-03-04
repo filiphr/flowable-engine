@@ -26,6 +26,9 @@ import org.flowable.bpmn.model.SubProcess;
 import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.api.delegate.event.FlowableEngineEventType;
 import org.flowable.common.engine.api.delegate.event.FlowableEventDispatcher;
+import org.flowable.common.engine.api.scope.ScopeTypes;
+import org.flowable.common.engine.api.variable.VariableTrace;
+import org.flowable.common.engine.api.variable.VariableTraceSourceContext;
 import org.flowable.common.engine.impl.interceptor.CommandContext;
 import org.flowable.common.engine.impl.logging.LoggingSessionConstants;
 import org.flowable.common.engine.impl.util.CollectionUtil;
@@ -291,17 +294,34 @@ public class ContinueProcessOperation extends AbstractOperation {
         }
 
         try {
-            if (migrationContext != null && activityBehavior instanceof ActivityWithMigrationContextBehavior activityWithMigrationContextBehavior) {
-                activityWithMigrationContextBehavior.execute(execution, migrationContext);
+            // When variable tracing is active, pre-bind the source context with the current activity element.
+            // This ensures that if the delegate calls execution.getProcessInstance().setVariable(...),
+            // the source element ID is correctly set (the process instance execution has no current flow element).
+            if (VariableTrace.CURRENT.isBound() && !VariableTraceSourceContext.CURRENT.isBound()) {
+                VariableTraceSourceContext sourceContext = new VariableTraceSourceContext(
+                        flowNode.getId(),
+                        execution.getProcessInstanceId(),
+                        ScopeTypes.BPMN,
+                        execution.getProcessDefinitionId());
+                ScopedValue.where(VariableTraceSourceContext.CURRENT, sourceContext)
+                        .run(() -> executeActivityBehaviorInContext(activityBehavior));
             } else {
-                activityBehavior.execute(execution);
+                executeActivityBehaviorInContext(activityBehavior);
             }
-            
+
         } catch (RuntimeException e) {
             if (LogMDC.isMDCEnabled()) {
                 LogMDC.putMDCExecution(execution);
             }
             throw e;
+        }
+    }
+
+    protected void executeActivityBehaviorInContext(ActivityBehavior activityBehavior) {
+        if (migrationContext != null && activityBehavior instanceof ActivityWithMigrationContextBehavior activityWithMigrationContextBehavior) {
+            activityWithMigrationContextBehavior.execute(execution, migrationContext);
+        } else {
+            activityBehavior.execute(execution);
         }
     }
 

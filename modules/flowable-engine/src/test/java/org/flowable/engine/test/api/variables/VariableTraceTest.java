@@ -23,6 +23,7 @@ import org.flowable.common.engine.api.variable.VariableTraceEntry;
 import org.flowable.common.engine.api.variable.VariableTraceOperationType;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.delegate.JavaDelegate;
+import org.flowable.engine.impl.persistence.entity.ExecutionEntity;
 import org.flowable.engine.impl.test.PluggableFlowableTestCase;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.engine.test.Deployment;
@@ -457,6 +458,53 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
         // "age" was not changed, so it should not appear in the diff
         assertThat(diff).doesNotContainKey("removed");
         assertThat(changed).doesNotContainKey("age");
+    }
+
+    @Test
+    @Deployment(resources = "org/flowable/engine/test/api/variables/VariableTraceTest.testVariableTraceViaProcessInstance.bpmn20.xml")
+    public void testVariableTraceViaProcessInstance() {
+        // Tests that execution.getProcessInstance().setVariable(...) gets the correct source element
+        VariableTrace trace = new VariableTrace();
+        ProcessInstance processInstance = runtimeService.createProcessInstanceBuilder()
+                .processDefinitionKey("variableTraceViaProcessInstanceProcess")
+                .variable("inputVar", "hello")
+                .variableTrace(trace)
+                .start();
+
+        List<VariableTraceEntry> entries = trace.getEntries();
+
+        System.out.println("=== Variable Trace: Via ProcessInstance ===");
+        for (VariableTraceEntry e : entries) {
+            System.out.printf("  #%-3d %-6s | element=%-15s | var=%-15s | type=%-10s | value=%-10s%n",
+                    e.sequence(), e.operationType(), e.sourceElementId(), e.variableName(), e.variableType(), e.value());
+        }
+        System.out.println();
+
+        // The outputVar created via execution.getProcessInstance().setVariable() should have serviceTask1 as source element
+        assertThat(entries)
+                .filteredOn(e -> e.operationType() == VariableTraceOperationType.CREATE && "outputVar".equals(e.variableName()))
+                .hasSize(1)
+                .first()
+                .satisfies(e -> {
+                    assertThat(e.sourceElementId()).as("sourceElementId for processInstance.setVariable()").isEqualTo("serviceTask1");
+                    assertThat(e.sourceScopeId()).isEqualTo(processInstance.getId());
+                    assertThat(e.targetScopeId()).isEqualTo(processInstance.getId());
+                });
+    }
+
+    /**
+     * Service task delegate that reads inputVar and creates outputVar via the process instance scope.
+     * This tests that the source element is correctly set when setVariable() is called on the process instance
+     * rather than on the current execution.
+     */
+    public static class WriteViaProcessInstanceDelegate implements JavaDelegate {
+
+        @Override
+        public void execute(DelegateExecution execution) {
+            String input = (String) execution.getVariable("inputVar");
+            ExecutionEntity executionEntity = (ExecutionEntity) execution;
+            executionEntity.getProcessInstance().setVariable("outputVar", input.toUpperCase());
+        }
     }
 
     /**
