@@ -289,9 +289,9 @@ public class VariableTraceTest extends PluggableFlowableTestCase {
                 .extracting(VariableTraceEntry::variableName, VariableTraceEntry::value)
                 .contains(tuple("outputVar", "HELLO"));
 
-        // The exclusive gateway condition "${outputVar == 'HELLO'}" should READ outputVar
+        // The sequence flow condition "${outputVar == 'HELLO'}" should READ outputVar with the sequence flow element ID
         assertThat(entries)
-                .filteredOn(e -> "exclusiveGw".equals(e.elementId()) && e.operationType() == VariableTraceOperationType.READ)
+                .filteredOn(e -> "flowToTask2".equals(e.elementId()) && e.operationType() == VariableTraceOperationType.READ)
                 .extracting(VariableTraceEntry::variableName, VariableTraceEntry::value)
                 .contains(tuple("outputVar", "HELLO"));
 

@@ -15,6 +15,7 @@ package org.flowable.engine.impl.util.condition;
 import org.apache.commons.lang3.StringUtils;
 import org.flowable.bpmn.model.SequenceFlow;
 import org.flowable.common.engine.api.delegate.Expression;
+import org.flowable.common.engine.api.variable.VariableTraceSourceContext;
 import org.flowable.engine.DynamicBpmnConstants;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.impl.Condition;
@@ -58,6 +59,22 @@ public class ConditionUtil {
 		} else {
 			condition = new ScriptCondition(conditionExpression, conditionLanguage);
 		}
+
+		// When variable tracing is active and source context is already bound (e.g., from a gateway),
+		// rebind with the sequence flow element ID so that variable reads are attributed to the sequence flow.
+		if (VariableTraceSourceContext.CURRENT.isBound()) {
+			VariableTraceSourceContext parentContext = VariableTraceSourceContext.CURRENT.get();
+			VariableTraceSourceContext sequenceFlowContext = new VariableTraceSourceContext(
+					elementId,
+					parentContext.scopeId(),
+					parentContext.scopeType(),
+					parentContext.definitionId());
+			boolean[] result = new boolean[1];
+			ScopedValue.where(VariableTraceSourceContext.CURRENT, sequenceFlowContext)
+					.run(() -> result[0] = condition.evaluate(elementId, execution));
+			return result[0];
+		}
+
 		return condition.evaluate(elementId, execution);
 	}
 

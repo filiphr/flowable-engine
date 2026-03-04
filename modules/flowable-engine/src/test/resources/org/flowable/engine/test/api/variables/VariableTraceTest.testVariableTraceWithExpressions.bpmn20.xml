@@ -16,10 +16,10 @@
 
     <!-- Exclusive gateway with condition expressions -->
     <exclusiveGateway id="exclusiveGw" />
-    <sequenceFlow sourceRef="exclusiveGw" targetRef="serviceTask2">
+    <sequenceFlow id="flowToTask2" sourceRef="exclusiveGw" targetRef="serviceTask2">
       <conditionExpression>${outputVar == 'HELLO'}</conditionExpression>
     </sequenceFlow>
-    <sequenceFlow sourceRef="exclusiveGw" targetRef="serviceTask3">
+    <sequenceFlow id="flowToTask3" sourceRef="exclusiveGw" targetRef="serviceTask3">
       <conditionExpression>${outputVar != 'HELLO'}</conditionExpression>
     </sequenceFlow>
 
